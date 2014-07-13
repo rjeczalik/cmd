@@ -3,7 +3,7 @@ tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)]
 
 ## fs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs)
 
-Package fs provides an interface for a filesystem.
+Package fs provides an interface for the filesystem-related functions from the `os` package.
 
 *Installation*
 
@@ -17,7 +17,7 @@ Package fs provides an interface for a filesystem.
 
 ## fs/memfs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs/memfs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/memfs)
 
-Package memfs provides an interface for an in-memory filesystem.
+Package memfs provides an implementation for an in-memory filesystem.
 
 *Installation*
 
@@ -31,7 +31,7 @@ Package memfs provides an interface for an in-memory filesystem.
 
 ## glob [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/glob)
 
-Package memfs provides an interface for an in-memory filesystem.
+Package glob is a collection of functions useful for traversing a filesystem in all unusual ways.
 
 *Installation*
 
@@ -42,3 +42,17 @@ Package memfs provides an interface for an in-memory filesystem.
 *Documentation*
 
 [godoc.org/github.com/rjeczalik/tools/glob](http://godoc.org/github.com/rjeczalik/tools/glob)
+
+## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
+
+Package netz provides an interface for the `net` package from standard library.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/netz
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/netz](http://godoc.org/github.com/rjeczalik/tools/netz)
