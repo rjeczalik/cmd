@@ -15,16 +15,16 @@ Package fs provides an interface for a filesystem.
 
 [godoc.org/github.com/rjeczalik/tools/fs](http://godoc.org/github.com/rjeczalik/tools/fs)
 
-## fs/mockfs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs/mockfs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/mockfs)
+## fs/fakefs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs/fakefs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/fakefs)
 
-Package mockfs provides an interface for an in-memory filesystem.
+Package fakefs provides an interface for an in-memory filesystem.
 
 *Installation*
 
 ```bash
-~ $ go get -u github.com/rjeczalik/tools/fs/mockfs
+~ $ go get -u github.com/rjeczalik/tools/fs/fakefs
 ```
 
 *Documentation*
 
-[godoc.org/github.com/rjeczalik/tools/fs/mockfs](http://godoc.org/github.com/rjeczalik/tools/fs/mockfs)
+[godoc.org/github.com/rjeczalik/tools/fs/fakefs](http://godoc.org/github.com/rjeczalik/tools/fs/fakefs)

@@ -1,5 +1,5 @@
-// Package mockfs provides an interface for an in-memory filesystem.
-package mockfs
+// Package fakefs provides an interface for an in-memory filesystem.
+package fakefs
 
 import (
 	"bytes"

@@ -1,10 +1,9 @@
-package mockfs
+package fakefs
 
 import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -13,9 +12,9 @@ func fixture() FS {
 		Tree: Directory{
 			"fs": Directory{
 				"fs.go": NewFile("fs.go"),
-				"mockfs": Directory{
-					"mockfs.go":      NewFile("mockfs.go"),
-					"mockfs_test.go": NewFile("mockfs_test.go"),
+				"fakefs": Directory{
+					"fakefs.go":      NewFile("fakefs.go"),
+					"fakefs_test.go": NewFile("fakefs_test.go"),
 				},
 			},
 			"LICENSE":   NewFile("LICENSE"),
@@ -24,34 +23,27 @@ func fixture() FS {
 	}
 }
 
-func path(s string) string {
-	if os.PathSeparator != '/' {
-		s = strings.Replace(s, "/", "\\", -1)
-	}
-	return s
-}
-
 func TestCreate(t *testing.T) {
 	fs := fixture()
 	cases := [...]struct {
 		file string
 		err  error
 	}{
-		0:  {file: path("c:/fs/mockfs/all_test.go")},
-		1:  {file: path("/LICENSE")},
-		2:  {file: path("c:/fs/fs.go")},
-		3:  {file: path("/LICENSE.md")},
-		4:  {file: path("/fs/fs_test.go")},
-		5:  {file: path("/"), err: (*os.PathError)(nil)},
-		6:  {file: path("c:"), err: (*os.PathError)(nil)},
-		7:  {file: path("c:/"), err: (*os.PathError)(nil)},
-		8:  {file: path("/fs"), err: (*os.PathError)(nil)},
-		9:  {file: path("/fs/mockfs"), err: (*os.PathError)(nil)},
-		10: {file: path("/.git/config"), err: (*os.PathError)(nil)},
-		11: {file: path("/fs/.svn/config"), err: (*os.PathError)(nil)},
-		12: {file: path("/LICENSE/OTHER.md"), err: (*os.PathError)(nil)},
-		13: {file: path("/fs/fs.go/detail.go"), err: (*os.PathError)(nil)},
-		14: {file: path("/fs/mockfs/nfs/nfs.go"), err: (*os.PathError)(nil)},
+		0:  {file: filepath.FromSlash("c:/fs/fakefs/all_test.go")},
+		1:  {file: filepath.FromSlash("/LICENSE")},
+		2:  {file: filepath.FromSlash("c:/fs/fs.go")},
+		3:  {file: filepath.FromSlash("/LICENSE.md")},
+		4:  {file: filepath.FromSlash("/fs/fs_test.go")},
+		5:  {file: filepath.FromSlash("/"), err: (*os.PathError)(nil)},
+		6:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
+		7:  {file: filepath.FromSlash("c:/"), err: (*os.PathError)(nil)},
+		8:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
+		9:  {file: filepath.FromSlash("/fs/fakefs"), err: (*os.PathError)(nil)},
+		10: {file: filepath.FromSlash("/.git/config"), err: (*os.PathError)(nil)},
+		11: {file: filepath.FromSlash("/fs/.svn/config"), err: (*os.PathError)(nil)},
+		12: {file: filepath.FromSlash("/LICENSE/OTHER.md"), err: (*os.PathError)(nil)},
+		13: {file: filepath.FromSlash("/fs/fs.go/detail.go"), err: (*os.PathError)(nil)},
+		14: {file: filepath.FromSlash("/fs/fakefs/nfs/nfs.go"), err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
 		f, err := fs.Create(cas.file)
@@ -89,17 +81,17 @@ func TestMkdir(t *testing.T) {
 		dir string
 		err error
 	}{
-		0:  {dir: path("/testdata")},
-		1:  {dir: path("/fs/testdata")},
-		2:  {dir: path("c:/fs/mockfs/testdata")},
-		3:  {dir: path("c:/testdata")},
-		4:  {dir: path("c:/")},
-		5:  {dir: path("/")},
-		6:  {dir: path("c:/LICENSE"), err: (*os.PathError)(nil)},
-		7:  {dir: path("c:/LICENSE/testdata"), err: (*os.PathError)(nil)},
-		8:  {dir: path("/fs/mockfs/mockfs.go"), err: (*os.PathError)(nil)},
-		9:  {dir: path("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
-		10: {dir: path("c:/fs/mockfs/mockfs_test.go"), err: (*os.PathError)(nil)},
+		0:  {dir: filepath.FromSlash("/testdata")},
+		1:  {dir: filepath.FromSlash("/fs/testdata")},
+		2:  {dir: filepath.FromSlash("c:/fs/fakefs/testdata")},
+		3:  {dir: filepath.FromSlash("c:/testdata")},
+		4:  {dir: filepath.FromSlash("c:/")},
+		5:  {dir: filepath.FromSlash("/")},
+		6:  {dir: filepath.FromSlash("c:/LICENSE"), err: (*os.PathError)(nil)},
+		7:  {dir: filepath.FromSlash("c:/LICENSE/testdata"), err: (*os.PathError)(nil)},
+		8:  {dir: filepath.FromSlash("/fs/fakefs/fakefs.go"), err: (*os.PathError)(nil)},
+		9:  {dir: filepath.FromSlash("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
+		10: {dir: filepath.FromSlash("c:/fs/fakefs/fakefs_test.go"), err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
 		err := fs.Mkdir(cas.dir, 0xD)
@@ -137,15 +129,15 @@ func TestOpen(t *testing.T) {
 		path string
 		dir  bool
 	}{
-		0: {path: path("c:/"), dir: true},
-		1: {path: path("/"), dir: true},
-		2: {path: path("/fs"), dir: true},
-		3: {path: path("c:/fs/mockfs"), dir: true},
-		4: {path: path("/LICENSE"), dir: false},
-		5: {path: path("c:/README.md"), dir: false},
-		6: {path: path("/fs/fs.go"), dir: false},
-		7: {path: path("c:/fs/mockfs/mockfs.go"), dir: false},
-		8: {path: path("/fs/mockfs/mockfs_test.go"), dir: false},
+		0: {path: filepath.FromSlash("c:/"), dir: true},
+		1: {path: filepath.FromSlash("/"), dir: true},
+		2: {path: filepath.FromSlash("/fs"), dir: true},
+		3: {path: filepath.FromSlash("c:/fs/fakefs"), dir: true},
+		4: {path: filepath.FromSlash("/LICENSE"), dir: false},
+		5: {path: filepath.FromSlash("c:/README.md"), dir: false},
+		6: {path: filepath.FromSlash("/fs/fs.go"), dir: false},
+		7: {path: filepath.FromSlash("c:/fs/fakefs/fakefs.go"), dir: false},
+		8: {path: filepath.FromSlash("/fs/fakefs/fakefs_test.go"), dir: false},
 	}
 	for i, cas := range cases {
 		f, err := fs.Open(cas.path)
@@ -173,17 +165,17 @@ func TestRemove(t *testing.T) {
 		file string
 		err  error
 	}{
-		0:  {file: path("/LICENSE")},
-		1:  {file: path("/README.md")},
-		2:  {file: path("/fs"), err: (*os.PathError)(nil)},
-		3:  {file: path("/fs/fs.go")},
-		4:  {file: path("/fs/mockfs"), err: (*os.PathError)(nil)},
-		5:  {file: path("/fs/mockfs/mockfs.go")},
-		6:  {file: path("/fs/mockfs/mockfs_test.go")},
-		7:  {file: path("/"), err: (*os.PathError)(nil)},
-		8:  {file: path("c:"), err: (*os.PathError)(nil)},
-		9:  {file: path("/er234"), err: os.ErrNotExist},
-		10: {file: path("/fs/dfgdft345"), err: os.ErrNotExist},
+		0:  {file: filepath.FromSlash("/LICENSE")},
+		1:  {file: filepath.FromSlash("/README.md")},
+		2:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
+		3:  {file: filepath.FromSlash("/fs/fs.go")},
+		4:  {file: filepath.FromSlash("/fs/fakefs"), err: (*os.PathError)(nil)},
+		5:  {file: filepath.FromSlash("/fs/fakefs/fakefs.go")},
+		6:  {file: filepath.FromSlash("/fs/fakefs/fakefs_test.go")},
+		7:  {file: filepath.FromSlash("/"), err: (*os.PathError)(nil)},
+		8:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
+		9:  {file: filepath.FromSlash("/er234"), err: os.ErrNotExist},
+		10: {file: filepath.FromSlash("/fs/dfgdft345"), err: os.ErrNotExist},
 	}
 	for i, cas := range cases {
 		err := fs.Remove(cas.file)
@@ -219,18 +211,18 @@ func TestReaddir(t *testing.T) {
 		name string
 		dir  bool
 	}{
-		path("/"): {
+		filepath.FromSlash("/"): {
 			{"fs", true},
 			{"LICENSE", false},
 			{"README.md", false},
 		},
-		path("/fs"): {
+		filepath.FromSlash("/fs"): {
 			{"fs.go", false},
-			{"mockfs", true},
+			{"fakefs", true},
 		},
-		path("c:/fs/mockfs"): {
-			{"mockfs.go", false},
-			{"mockfs_test.go", false},
+		filepath.FromSlash("c:/fs/fakefs"): {
+			{"fakefs.go", false},
+			{"fakefs_test.go", false},
 		},
 	}
 	for path, cas := range cases {
