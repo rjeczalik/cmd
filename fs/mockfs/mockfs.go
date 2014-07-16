@@ -1,3 +1,4 @@
+// Package mockfs provides an interface for an in-memory filesystem.
 package mockfs
 
 import (
@@ -11,19 +12,20 @@ import (
 	"github.com/rjeczalik/tools/fs"
 )
 
-// Directory TODO
+// Directory represents an in-memory directory
 type Directory map[string]interface{}
 
-// File TODO
+// File represents an in-memory file.
 type File *[]byte
 
-// NewFile TODO
+// NewFile creates an in-memory file with the given content.
 func NewFile(content string) File {
 	p := []byte(content)
 	return File(&p)
 }
 
-// FS TODO
+// FS provides an implementation for Filesystem interfaces, operating on
+// an in-memory file tree.
 // TODO(rjeczalik): sync.RWMutex
 type FS struct {
 	Tree Directory
@@ -79,7 +81,7 @@ func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
 	return dir, p[i+1:], nil
 }
 
-// Create TODO
+// Create creates an in-memory file under the given path.
 func (fs FS) Create(name string) (fs.File, error) {
 	dir, base, perr := fs.dirbase(name)
 	if perr != nil {
@@ -99,7 +101,7 @@ func (fs FS) Create(name string) (fs.File, error) {
 	return file{s: name, p: &p, r: new(bytes.Reader)}, nil
 }
 
-// Mkdir TODO
+// Mkdir creates an in-memory directory under the given path.
 func (fs FS) Mkdir(name string, _ os.FileMode) error {
 	dir, base, perr := fs.dirbase(name)
 	if perr != nil {
@@ -118,7 +120,7 @@ func (fs FS) Mkdir(name string, _ os.FileMode) error {
 	return nil
 }
 
-// Open TODO
+// Open opens a file or directory given by the path.
 func (fs FS) Open(name string) (fs.File, error) {
 	dir, base, perr := fs.dirbase(name)
 	if perr != nil {
@@ -141,7 +143,7 @@ func (fs FS) Open(name string) (fs.File, error) {
 	return nil, &os.PathError{"Open", name, errCorrupted}
 }
 
-// Remove TODO
+// Remove removes a file from the tree given by the path.
 func (fs FS) Remove(name string) error {
 	dir, base, perr := fs.dirbase(name)
 	if perr != nil {
@@ -161,7 +163,7 @@ func (fs FS) Remove(name string) error {
 	return nil
 }
 
-// Stat TODO
+// Stat gives the details of a file or a directory given by the path.
 func (fs FS) Stat(name string) (os.FileInfo, error) {
 	f, err := fs.Open(name)
 	if err != nil {
