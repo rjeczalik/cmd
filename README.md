@@ -28,3 +28,17 @@ Package fakefs provides an interface for an in-memory filesystem.
 *Documentation*
 
 [godoc.org/github.com/rjeczalik/tools/fs/fakefs](http://godoc.org/github.com/rjeczalik/tools/fs/fakefs)
+
+## glob [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/glob)
+
+Package fakefs provides an interface for an in-memory filesystem.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/glob
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/glob](http://godoc.org/github.com/rjeczalik/tools/glob)
