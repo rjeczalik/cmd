@@ -11,14 +11,14 @@ func fixture() FS {
 	return FS{
 		Tree: Directory{
 			"fs": Directory{
-				"fs.go": NewFile("fs.go"),
+				"fs.go": File{},
 				"memfs": Directory{
-					"memfs.go":      NewFile("memfs.go"),
-					"memfs_test.go": NewFile("memfs_test.go"),
+					"memfs.go":      File{},
+					"memfs_test.go": File{},
 				},
 			},
-			"LICENSE":   NewFile("LICENSE"),
-			"README.md": NewFile("README.md"),
+			"LICENSE":   File{},
+			"README.md": File{},
 		},
 	}
 }

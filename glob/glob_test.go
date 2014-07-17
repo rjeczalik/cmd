@@ -16,15 +16,15 @@ var testdata = fs.FS{
 						".git": fs.Directory{},
 						"assets": fs.Directory{
 							"js": fs.Directory{
-								"app.js":  fs.NewFile("app.js"),
-								"link.js": fs.NewFile("link.js"),
+								"app.js":  fs.File{},
+								"link.js": fs.File{},
 							},
 							"css": fs.Directory{
-								"default.css": fs.NewFile("default.css"),
+								"default.css": fs.File{},
 							},
 						},
 						"dir": fs.Directory{
-							"dir.txt": fs.NewFile("dir.txt"),
+							"dir.txt": fs.File{},
 						},
 					},
 				},
@@ -36,9 +36,9 @@ var testdata = fs.FS{
 					"example": fs.Directory{
 						".git": fs.Directory{},
 						"dir": fs.Directory{
-							"dir.go": fs.NewFile("dir.go"),
+							"dir.go": fs.File{},
 						},
-						"example.go": fs.NewFile("example.go"),
+						"example.go": fs.File{},
 					},
 				},
 			},
@@ -117,26 +117,26 @@ var schema = fs.FS{
 			"licstat": fs.Directory{
 				"schema": fs.Directory{
 					"databasequery": fs.Directory{
-						"reqaddaliasls.json":  fs.NewFile("reqaddaliasls.json"),
-						"reqdeletef.json":     fs.NewFile("reqdeletef.json"),
-						"reqdeletels.json":    fs.NewFile("reqdeletels.json"),
-						"reqmergels.json":     fs.NewFile("reqmergels.json"),
-						"reqquerystatus.json": fs.NewFile("reqquerystatus.json"),
+						"reqaddaliasls.json":  fs.File{},
+						"reqdeletef.json":     fs.File{},
+						"reqdeletels.json":    fs.File{},
+						"reqmergels.json":     fs.File{},
+						"reqquerystatus.json": fs.File{},
 					},
 					"generalinfo": fs.Directory{
-						"reqinstallpath.json": fs.NewFile("reqinstallpath.json"),
+						"reqinstallpath.json": fs.File{},
 					},
 					"license": fs.Directory{
-						"reqlicensedetail.json": fs.NewFile("reqlicensedetail.json"),
+						"reqlicensedetail.json": fs.File{},
 					},
 					"monitorconf": fs.Directory{
-						"reqaddls.json":    fs.NewFile("reqaddls.json"),
-						"reqcheckls.json":  fs.NewFile("reqcheckls.json"),
-						"reqeditls.json":   fs.NewFile("reqeditls.json"),
-						"reqremovels.json": fs.NewFile("reqremovels.json"),
-						"reqstatusls.json": fs.NewFile("reqstatusls.json"),
+						"reqaddls.json":    fs.File{},
+						"reqcheckls.json":  fs.File{},
+						"reqeditls.json":   fs.File{},
+						"reqremovels.json": fs.File{},
+						"reqstatusls.json": fs.File{},
 					},
-					"definitions.json": fs.NewFile("definitions.json"),
+					"definitions.json": fs.File{},
 				},
 			},
 		},
@@ -144,7 +144,7 @@ var schema = fs.FS{
 			"licstat": fs.Directory{
 				"schema": fs.Directory{
 					"tmp":       fs.Directory{},
-					"schema.go": fs.NewFile("schema.go"),
+					"schema.go": fs.File{},
 				},
 			},
 		},

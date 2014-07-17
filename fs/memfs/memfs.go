@@ -16,13 +16,7 @@ import (
 type Directory map[string]interface{}
 
 // File represents an in-memory file.
-type File *[]byte
-
-// NewFile creates an in-memory file with the given content.
-func NewFile(content string) File {
-	p := []byte(content)
-	return File(&p)
-}
+type File []byte
 
 // FS provides an implementation for Filesystem interfaces, operating on
 // an in-memory file tree.
@@ -81,6 +75,12 @@ func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
 	return dir, p[i+1:], nil
 }
 
+func (fs FS) flushcb(dir Directory, name string) func([]byte) {
+	return func(p []byte) {
+		dir[name] = File(p)
+	}
+}
+
 // Create creates an in-memory file under the given path.
 func (fs FS) Create(name string) (fs.File, error) {
 	dir, base, perr := fs.dirbase(name)
@@ -96,9 +96,8 @@ func (fs FS) Create(name string) (fs.File, error) {
 			return nil, &os.PathError{"Create", name, errDir}
 		}
 	}
-	p := make([]byte, 0)
-	dir[base] = File(&p)
-	return file{s: name, p: &p, r: new(bytes.Reader)}, nil
+	dir[base] = File{}
+	return file{s: name, f: fs.flushcb(dir, base), r: new(bytes.Reader)}, nil
 }
 
 // Mkdir creates an in-memory directory under the given path.
@@ -135,8 +134,7 @@ func (fs FS) Open(name string) (fs.File, error) {
 	}
 	switch v := dir[base].(type) {
 	case File:
-		p := (*[]byte)(v)
-		return file{s: name, p: p, r: bytes.NewReader(*p)}, nil
+		return file{s: name, f: fs.flushcb(dir, base), r: bytes.NewReader([]byte(v))}, nil
 	case Directory:
 		return directory{s: name, d: v}, nil
 	}
@@ -173,15 +171,16 @@ func (fs FS) Stat(name string) (os.FileInfo, error) {
 }
 
 type file struct {
-	s string
-	p *[]byte
-	r *bytes.Reader
-	w *bytes.Buffer
+	s string        // name
+	f func([]byte)  // flush callback
+	r *bytes.Reader // for reading (io.Seeker)
+	w *bytes.Buffer // for writing - merge?
 }
 
 func (f file) Close() (err error) {
 	if f.w != nil {
-		*f.p = f.w.Bytes()
+		f.f(f.w.Bytes())
+		f.w = nil
 	}
 	return
 }
@@ -233,7 +232,7 @@ func (d directory) Readdir(n int) (fi []os.FileInfo, err error) {
 	fi = make([]os.FileInfo, 0, len(d.d))
 	for k, v := range d.d {
 		if f, ok := v.(File); ok {
-			fi = append(fi, fileinfo{filepath.Join(d.s, k), int64(len(*f)), false})
+			fi = append(fi, fileinfo{filepath.Join(d.s, k), int64(len(f)), false})
 		} else {
 			fi = append(fi, fileinfo{filepath.Join(d.s, k), 0, true})
 		}
