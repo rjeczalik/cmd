@@ -4,41 +4,41 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rjeczalik/tools/fs/fakefs"
+	fs "github.com/rjeczalik/tools/fs/fakefs"
 )
 
-var testdata = fakefs.FS{
-	Tree: fakefs.Directory{
-		"data": fakefs.Directory{
-			"github.com": fakefs.Directory{
-				"user": fakefs.Directory{
-					"example": fakefs.Directory{
-						".git": fakefs.Directory{},
-						"assets": fakefs.Directory{
-							"js": fakefs.Directory{
-								"app.js":  fakefs.NewFile("app.js"),
-								"link.js": fakefs.NewFile("link.js"),
+var testdata = fs.FS{
+	Tree: fs.Directory{
+		"data": fs.Directory{
+			"github.com": fs.Directory{
+				"user": fs.Directory{
+					"example": fs.Directory{
+						".git": fs.Directory{},
+						"assets": fs.Directory{
+							"js": fs.Directory{
+								"app.js":  fs.NewFile("app.js"),
+								"link.js": fs.NewFile("link.js"),
 							},
-							"css": fakefs.Directory{
-								"default.css": fakefs.NewFile("default.css"),
+							"css": fs.Directory{
+								"default.css": fs.NewFile("default.css"),
 							},
 						},
-						"dir": fakefs.Directory{
-							"dir.txt": fakefs.NewFile("dir.txt"),
+						"dir": fs.Directory{
+							"dir.txt": fs.NewFile("dir.txt"),
 						},
 					},
 				},
 			},
 		},
-		"src": fakefs.Directory{
-			"github.com": fakefs.Directory{
-				"user": fakefs.Directory{
-					"example": fakefs.Directory{
-						".git": fakefs.Directory{},
-						"dir": fakefs.Directory{
-							"dir.go": fakefs.NewFile("dir.go"),
+		"src": fs.Directory{
+			"github.com": fs.Directory{
+				"user": fs.Directory{
+					"example": fs.Directory{
+						".git": fs.Directory{},
+						"dir": fs.Directory{
+							"dir.go": fs.NewFile("dir.go"),
 						},
-						"example.go": fakefs.NewFile("example.go"),
+						"example.go": fs.NewFile("example.go"),
 					},
 				},
 			},
@@ -108,5 +108,58 @@ func TestIntersect(t *testing.T) {
 		if !equal(names, cas) {
 			t.Errorf("want names=%v; got %v (hidden=%v)", cas, names, b)
 		}
+	}
+}
+
+var schema = fs.FS{
+	Tree: fs.Directory{
+		"schema": fs.Directory{
+			"licstat": fs.Directory{
+				"schema": fs.Directory{
+					"databasequery": fs.Directory{
+						"reqaddaliasls.json":  fs.NewFile("reqaddaliasls.json"),
+						"reqdeletef.json":     fs.NewFile("reqdeletef.json"),
+						"reqdeletels.json":    fs.NewFile("reqdeletels.json"),
+						"reqmergels.json":     fs.NewFile("reqmergels.json"),
+						"reqquerystatus.json": fs.NewFile("reqquerystatus.json"),
+					},
+					"generalinfo": fs.Directory{
+						"reqinstallpath.json": fs.NewFile("reqinstallpath.json"),
+					},
+					"license": fs.Directory{
+						"reqlicensedetail.json": fs.NewFile("reqlicensedetail.json"),
+					},
+					"monitorconf": fs.Directory{
+						"reqaddls.json":    fs.NewFile("reqaddls.json"),
+						"reqcheckls.json":  fs.NewFile("reqcheckls.json"),
+						"reqeditls.json":   fs.NewFile("reqeditls.json"),
+						"reqremovels.json": fs.NewFile("reqremovels.json"),
+						"reqstatusls.json": fs.NewFile("reqstatusls.json"),
+					},
+					"definitions.json": fs.NewFile("definitions.json"),
+				},
+			},
+		},
+		"src": fs.Directory{
+			"licstat": fs.Directory{
+				"schema": fs.Directory{
+					"tmp":       fs.Directory{},
+					"schema.go": fs.NewFile("schema.go"),
+				},
+			},
+		},
+	},
+}
+
+func TestIntersect_SchemaUnique(t *testing.T) {
+	cas := []string{
+		filepath.FromSlash("licstat/schema"),
+	}
+	names := (Glob{FS: schema}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
+	if names == nil {
+		t.Fatal("want names!=nil")
+	}
+	if !equal(names, cas) {
+		t.Errorf("want names=%v; got %v", cas, names)
 	}
 }

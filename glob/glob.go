@@ -56,21 +56,17 @@ func (g Glob) Gopath() []string {
 
 // Intersect
 func (g Glob) Intersect(src, dir string) []string {
-	glob, dirs, pop := []string{""}, []string{}, ""
+	glob, dirs, pop := []string{""}, map[string]struct{}{"": {}}, ""
 	for len(glob) > 0 {
 		pop, glob = glob[len(glob)-1], glob[:len(glob)-1]
 		subdir := g.Readdirnames(filepath.Join(dir, pop))
 		if subdir == nil {
-			if pop != "" {
-				dirs = append(dirs, pop)
-			}
+			dirs[pop] = struct{}{}
 			continue
 		}
 		subsrc := g.Readdirnames(filepath.Join(src, pop))
 		if subsrc == nil {
-			if pop != "" {
-				dirs = append(dirs, pop)
-			}
+			dirs[pop] = struct{}{}
 			continue
 		}
 	LOOP:
@@ -81,15 +77,18 @@ func (g Glob) Intersect(src, dir string) []string {
 					continue LOOP
 				}
 			}
-			if pop != "" {
-				dirs = append(dirs, pop)
-			}
+			dirs[pop] = struct{}{}
 		}
 	}
+	delete(dirs, "")
 	if len(dirs) == 0 {
 		return nil
 	}
-	return dirs
+	s := make([]string, 0, len(dirs))
+	for k := range dirs {
+		s = append(s, k)
+	}
+	return s
 }
 
 func (g Glob) hidden(name string) bool {
