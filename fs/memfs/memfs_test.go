@@ -1,4 +1,4 @@
-package fakefs
+package memfs
 
 import (
 	"os"
@@ -12,9 +12,9 @@ func fixture() FS {
 		Tree: Directory{
 			"fs": Directory{
 				"fs.go": NewFile("fs.go"),
-				"fakefs": Directory{
-					"fakefs.go":      NewFile("fakefs.go"),
-					"fakefs_test.go": NewFile("fakefs_test.go"),
+				"memfs": Directory{
+					"memfs.go":      NewFile("memfs.go"),
+					"memfs_test.go": NewFile("memfs_test.go"),
 				},
 			},
 			"LICENSE":   NewFile("LICENSE"),
@@ -29,7 +29,7 @@ func TestCreate(t *testing.T) {
 		file string
 		err  error
 	}{
-		0:  {file: filepath.FromSlash("c:/fs/fakefs/all_test.go")},
+		0:  {file: filepath.FromSlash("c:/fs/memfs/all_test.go")},
 		1:  {file: filepath.FromSlash("/LICENSE")},
 		2:  {file: filepath.FromSlash("c:/fs/fs.go")},
 		3:  {file: filepath.FromSlash("/LICENSE.md")},
@@ -38,12 +38,12 @@ func TestCreate(t *testing.T) {
 		6:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
 		7:  {file: filepath.FromSlash("c:/"), err: (*os.PathError)(nil)},
 		8:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
-		9:  {file: filepath.FromSlash("/fs/fakefs"), err: (*os.PathError)(nil)},
+		9:  {file: filepath.FromSlash("/fs/memfs"), err: (*os.PathError)(nil)},
 		10: {file: filepath.FromSlash("/.git/config"), err: (*os.PathError)(nil)},
 		11: {file: filepath.FromSlash("/fs/.svn/config"), err: (*os.PathError)(nil)},
 		12: {file: filepath.FromSlash("/LICENSE/OTHER.md"), err: (*os.PathError)(nil)},
 		13: {file: filepath.FromSlash("/fs/fs.go/detail.go"), err: (*os.PathError)(nil)},
-		14: {file: filepath.FromSlash("/fs/fakefs/nfs/nfs.go"), err: (*os.PathError)(nil)},
+		14: {file: filepath.FromSlash("/fs/memfs/nfs/nfs.go"), err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
 		f, err := fs.Create(cas.file)
@@ -83,15 +83,15 @@ func TestMkdir(t *testing.T) {
 	}{
 		0:  {dir: filepath.FromSlash("/testdata")},
 		1:  {dir: filepath.FromSlash("/fs/testdata")},
-		2:  {dir: filepath.FromSlash("c:/fs/fakefs/testdata")},
+		2:  {dir: filepath.FromSlash("c:/fs/memfs/testdata")},
 		3:  {dir: filepath.FromSlash("c:/testdata")},
 		4:  {dir: filepath.FromSlash("c:/")},
 		5:  {dir: filepath.FromSlash("/")},
 		6:  {dir: filepath.FromSlash("c:/LICENSE"), err: (*os.PathError)(nil)},
 		7:  {dir: filepath.FromSlash("c:/LICENSE/testdata"), err: (*os.PathError)(nil)},
-		8:  {dir: filepath.FromSlash("/fs/fakefs/fakefs.go"), err: (*os.PathError)(nil)},
+		8:  {dir: filepath.FromSlash("/fs/memfs/memfs.go"), err: (*os.PathError)(nil)},
 		9:  {dir: filepath.FromSlash("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
-		10: {dir: filepath.FromSlash("c:/fs/fakefs/fakefs_test.go"), err: (*os.PathError)(nil)},
+		10: {dir: filepath.FromSlash("c:/fs/memfs/memfs_test.go"), err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
 		err := fs.Mkdir(cas.dir, 0xD)
@@ -132,12 +132,12 @@ func TestOpen(t *testing.T) {
 		0: {path: filepath.FromSlash("c:/"), dir: true},
 		1: {path: filepath.FromSlash("/"), dir: true},
 		2: {path: filepath.FromSlash("/fs"), dir: true},
-		3: {path: filepath.FromSlash("c:/fs/fakefs"), dir: true},
+		3: {path: filepath.FromSlash("c:/fs/memfs"), dir: true},
 		4: {path: filepath.FromSlash("/LICENSE"), dir: false},
 		5: {path: filepath.FromSlash("c:/README.md"), dir: false},
 		6: {path: filepath.FromSlash("/fs/fs.go"), dir: false},
-		7: {path: filepath.FromSlash("c:/fs/fakefs/fakefs.go"), dir: false},
-		8: {path: filepath.FromSlash("/fs/fakefs/fakefs_test.go"), dir: false},
+		7: {path: filepath.FromSlash("c:/fs/memfs/memfs.go"), dir: false},
+		8: {path: filepath.FromSlash("/fs/memfs/memfs_test.go"), dir: false},
 	}
 	for i, cas := range cases {
 		f, err := fs.Open(cas.path)
@@ -169,9 +169,9 @@ func TestRemove(t *testing.T) {
 		1:  {file: filepath.FromSlash("/README.md")},
 		2:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
 		3:  {file: filepath.FromSlash("/fs/fs.go")},
-		4:  {file: filepath.FromSlash("/fs/fakefs"), err: (*os.PathError)(nil)},
-		5:  {file: filepath.FromSlash("/fs/fakefs/fakefs.go")},
-		6:  {file: filepath.FromSlash("/fs/fakefs/fakefs_test.go")},
+		4:  {file: filepath.FromSlash("/fs/memfs"), err: (*os.PathError)(nil)},
+		5:  {file: filepath.FromSlash("/fs/memfs/memfs.go")},
+		6:  {file: filepath.FromSlash("/fs/memfs/memfs_test.go")},
 		7:  {file: filepath.FromSlash("/"), err: (*os.PathError)(nil)},
 		8:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
 		9:  {file: filepath.FromSlash("/er234"), err: os.ErrNotExist},
@@ -218,11 +218,11 @@ func TestReaddir(t *testing.T) {
 		},
 		filepath.FromSlash("/fs"): {
 			{"fs.go", false},
-			{"fakefs", true},
+			{"memfs", true},
 		},
-		filepath.FromSlash("c:/fs/fakefs"): {
-			{"fakefs.go", false},
-			{"fakefs_test.go", false},
+		filepath.FromSlash("c:/fs/memfs"): {
+			{"memfs.go", false},
+			{"memfs_test.go", false},
 		},
 	}
 	for path, cas := range cases {

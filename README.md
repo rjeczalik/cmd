@@ -15,23 +15,23 @@ Package fs provides an interface for a filesystem.
 
 [godoc.org/github.com/rjeczalik/tools/fs](http://godoc.org/github.com/rjeczalik/tools/fs)
 
-## fs/fakefs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs/fakefs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/fakefs)
+## fs/memfs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs/memfs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/memfs)
 
-Package fakefs provides an interface for an in-memory filesystem.
+Package memfs provides an interface for an in-memory filesystem.
 
 *Installation*
 
 ```bash
-~ $ go get -u github.com/rjeczalik/tools/fs/fakefs
+~ $ go get -u github.com/rjeczalik/tools/fs/memfs
 ```
 
 *Documentation*
 
-[godoc.org/github.com/rjeczalik/tools/fs/fakefs](http://godoc.org/github.com/rjeczalik/tools/fs/fakefs)
+[godoc.org/github.com/rjeczalik/tools/fs/memfs](http://godoc.org/github.com/rjeczalik/tools/fs/memfs)
 
 ## glob [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/glob)
 
-Package fakefs provides an interface for an in-memory filesystem.
+Package memfs provides an interface for an in-memory filesystem.
 
 *Installation*
 

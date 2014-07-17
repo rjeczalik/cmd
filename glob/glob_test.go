@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	fs "github.com/rjeczalik/tools/fs/fakefs"
+	fs "github.com/rjeczalik/tools/fs/memfs"
 )
 
 var testdata = fs.FS{

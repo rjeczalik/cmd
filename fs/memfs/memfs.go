@@ -1,5 +1,5 @@
-// Package fakefs provides an interface for an in-memory filesystem.
-package fakefs
+// Package memfs provides an interface for an in-memory filesystem.
+package memfs
 
 import (
 	"bytes"
