@@ -34,10 +34,8 @@ type Filesystem interface {
 	// Open opens a file or a directory given by the path.
 	Open(string) (File, error)
 	// Remove deletes a file given by the path.
-	// Wraps os.Remove.
 	Remove(string) error
 	// Stat gives a file or a directory details, given by the path.
-	// Wraps os.Stat.
 	Stat(string) (os.FileInfo, error)
 }
 

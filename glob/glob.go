@@ -1,4 +1,5 @@
-// Package glob
+// Package glob is a collection of functions useful for traversing a filesystem
+// in all unusual ways.
 package glob
 
 import (
@@ -7,23 +8,55 @@ import (
 	"github.com/rjeczalik/tools/fs"
 )
 
-// Readdirnames
+// Readdirnames reads all names of all subdirectories of the 'dir', except
+// the ones which begin with a dot.
 func Readdirnames(dir string) []string {
-	return Default.Readdirnames(dir)
+	return defaultGlob.Readdirnames(dir)
 }
 
-// Intersect
+// Intersect returns a collection of paths which are the longest intersection
+// between two directory tries - those tries have roots in 'src' and 'dir' directories.
+// It does not glob into directories, which names begin with a dot.
+//
+// Example
+//
+// For the following filesystem:
+//
+//   .
+//   ├── data
+//   │   └── github.com
+//   │       └── user
+//   │           └── example
+//   │               └── assets
+//   │                   ├── css
+//   │                   └── js
+//   └── src
+//       └── github.com
+//           └── user
+//               └── example
+//
+// The following call:
+//
+//   names := glob.Intersect("src", "data")
+//
+// Gives:
+//
+//   []string{"github.com/user/example"}
 func Intersect(src, dir string) []string {
-	return Default.Intersect(src, dir)
+	return defaultGlob.Intersect(src, dir)
 }
 
-// Glob
+// Glob is the glob package's control structure, allows for changing the behavior
+// of its functions.
 type Glob struct {
-	FS     fs.Filesystem //
-	Hidden bool          //
+	// FS specifies the mechanism using which Glob accesses the filesystem.
+	FS fs.Filesystem
+	// Hidden tells whether the files and directories which name begin with a dot
+	// should be included in the results.
+	Hidden bool
 }
 
-// Readdirnames
+// Readdirnames reads all names of all subdirectories of the 'dir'.
 func (g Glob) Readdirnames(dir string) []string {
 	f, err := g.FS.Open(dir)
 	if err != nil {
@@ -49,12 +82,8 @@ func (g Glob) Readdirnames(dir string) []string {
 	return names
 }
 
-// Gopath
-func (g Glob) Gopath() []string {
-	return nil
-}
-
-// Intersect
+// Intersect returns a collection of paths which are the longest intersection
+// between two directory tries - those tries have roots in 'src' and 'dir' directories.
 func (g Glob) Intersect(src, dir string) []string {
 	glob, dirs, pop := []string{""}, map[string]struct{}{"": {}}, ""
 	for len(glob) > 0 {
@@ -95,8 +124,7 @@ func (g Glob) hidden(name string) bool {
 	return !g.Hidden && name[0] == '.'
 }
 
-// Default
-var Default = Glob{
+var defaultGlob = Glob{
 	FS:     fs.Default,
 	Hidden: false,
 }
