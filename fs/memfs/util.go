@@ -37,3 +37,29 @@ func Compare(lhs, rhs *FS) bool {
 	}
 	return true
 }
+
+// Fsck checks the fs Tree whether each node has proper type: either a File or
+// a Directory. Moreover it fails when directory contains an element with
+// an empty name. Fsking empty tree gives true.
+func Fsck(fs *FS) bool {
+	var (
+		glob = []Directory{fs.Tree}
+		dir  Directory
+	)
+	for len(glob) > 0 {
+		dir, glob = glob[len(glob)-1], glob[:len(glob)-1]
+		for k, v := range dir {
+			if k == "" {
+				return false
+			}
+			switch v := v.(type) {
+			case File:
+			case Directory:
+				glob = append(glob, v)
+			default:
+				return false
+			}
+		}
+	}
+	return true
+}
