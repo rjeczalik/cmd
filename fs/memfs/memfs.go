@@ -18,7 +18,7 @@ type Directory map[string]interface{}
 // File represents an in-memory file.
 type File []byte
 
-// FS provides an implementation for Filesystem interfaces, operating on
+// FS provides an implementation for Filesystem interface, operating on
 // an in-memory file tree.
 // TODO(rjeczalik): sync.RWMutex
 type FS struct {

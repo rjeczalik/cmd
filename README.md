@@ -56,3 +56,18 @@ Package netz provides an interface for the `net` package from standard library.
 *Documentation*
 
 [godoc.org/github.com/rjeczalik/tools/netz](http://godoc.org/github.com/rjeczalik/tools/netz)
+
+## netz/memnetz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz/memnetz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz/memnetz)
+
+Package netz provides an implementation for an in-memory networking fake.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/netz/memnetz
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/netz/memnetz](http://godoc.org/github.com/rjeczalik/tools/netz/memnetz)
+
