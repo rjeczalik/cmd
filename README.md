@@ -29,19 +29,19 @@ Package memfs provides an implementation for an in-memory filesystem.
 
 [godoc.org/github.com/rjeczalik/tools/fs/memfs](http://godoc.org/github.com/rjeczalik/tools/fs/memfs)
 
-## glob [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/glob)
+## fs/glob [![GoDoc](https://godoc.org/github.com/rjeczalik/fs/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/glob)
 
 Package glob is a collection of functions useful for traversing a filesystem in all unusual ways.
 
 *Installation*
 
 ```bash
-~ $ go get -u github.com/rjeczalik/tools/glob
+~ $ go get -u github.com/rjeczalik/tools/fs/glob
 ```
 
 *Documentation*
 
-[godoc.org/github.com/rjeczalik/tools/glob](http://godoc.org/github.com/rjeczalik/tools/glob)
+[godoc.org/github.com/rjeczalik/tools/fs/glob](http://godoc.org/github.com/rjeczalik/tools/fs/glob)
 
 ## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
 
