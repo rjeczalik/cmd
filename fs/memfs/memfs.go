@@ -25,6 +25,8 @@ type FS struct {
 	Tree Directory
 }
 
+var _ fs.Filesystem = FS{}
+
 var (
 	errDir       = errors.New("is a directory")
 	errNotDir    = errors.New("not a directory")
@@ -33,30 +35,42 @@ var (
 
 const sep = string(os.PathSeparator)
 
-func (fs FS) lookup(p string) (Directory, *os.PathError) {
+func (fs FS) dirwalk(p string, fn func(string) bool) {
 	if p == "" || p == "." {
-		return fs.Tree, nil
+		return
 	}
-	j := strings.Index(p, sep) + 1
-	if j == 0 || j == len(p) {
-		return fs.Tree, nil
+	i := strings.Index(p, sep) + 1
+	if i == 0 || i == len(p) {
+		return
 	}
-	dir := fs.Tree
-	for j < len(p) {
-		i := strings.Index(p[j:], sep)
-		if i == -1 {
-			i = len(p) - j
+	for i < len(p) {
+		j := strings.Index(p[i:], sep)
+		if j == -1 {
+			j = len(p) - i
 		}
-		v, ok := dir[p[j:j+i]]
+		if !fn(p[i : i+j]) {
+			return
+		}
+		i += j + 1
+	}
+}
+
+func (fs FS) lookup(p string) (dir Directory, perr *os.PathError) {
+	dir = fs.Tree
+	fn := func(name string) bool {
+		v, ok := dir[name]
 		if !ok {
-			return nil, &os.PathError{Err: os.ErrNotExist}
+			perr = &os.PathError{Err: os.ErrNotExist}
+			return false
 		}
 		if dir, ok = v.(Directory); !ok {
-			return nil, &os.PathError{Err: errNotDir}
+			perr = &os.PathError{Err: errNotDir}
+			return false
 		}
-		j += i + 1
+		return true
 	}
-	return dir, nil
+	fs.dirwalk(p, fn)
+	return
 }
 
 func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
@@ -117,6 +131,27 @@ func (fs FS) Mkdir(name string, _ os.FileMode) error {
 	}
 	dir[base] = Directory{}
 	return nil
+}
+
+// MkdirAll creates new in-memory directory and all its parents, if needed.
+func (fs FS) MkdirAll(name string, _ os.FileMode) error {
+	var (
+		dir = fs.Tree
+		err error
+	)
+	fn := func(s string) bool {
+		v, ok := dir[s]
+		if !ok {
+			d := Directory{}
+			dir[s], dir = d, d
+		} else if dir, ok = v.(Directory); !ok {
+			err = &os.PathError{"MkdirAll", name, errNotDir}
+			return false
+		}
+		return true
+	}
+	fs.dirwalk(name, fn)
+	return err
 }
 
 // Open opens a file or directory given by the path.

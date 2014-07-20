@@ -31,6 +31,8 @@ type Filesystem interface {
 	Create(string) (File, error)
 	// Mkdir creates new directory. It's a nop, if the directory already exists.
 	Mkdir(string, os.FileMode) error
+	// MkdirAll creates new directory and all its parents, if needed.
+	MkdirAll(string, os.FileMode) error
 	// Open opens a file or a directory given by the path.
 	Open(string) (File, error)
 	// Remove deletes a file given by the path.
@@ -51,6 +53,11 @@ func (FS) Create(name string) (File, error) {
 // Mkdir wraps os.Mkdir.
 func (FS) Mkdir(name string, perm os.FileMode) error {
 	return os.Mkdir(name, perm)
+}
+
+// Mkdir wraps os.MkdirAll.
+func (FS) MkdirAll(name string, perm os.FileMode) error {
+	return os.MkdirAll(name, perm)
 }
 
 // Open wraps os.Open.

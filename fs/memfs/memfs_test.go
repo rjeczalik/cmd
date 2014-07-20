@@ -123,6 +123,51 @@ func TestMkdir(t *testing.T) {
 	}
 }
 
+func TestMkdirAll(t *testing.T) {
+	fs := fixture()
+	cases := [...]struct {
+		dir string
+		err error
+	}{
+		0:  {dir: filepath.FromSlash("/")},
+		1:  {dir: filepath.FromSlash("/abc")},
+		2:  {dir: filepath.FromSlash("/abc/1/2/3")},
+		3:  {dir: filepath.FromSlash("/fs/abc")},
+		4:  {dir: filepath.FromSlash("/fs/abc/1/2/3")},
+		5:  {dir: filepath.FromSlash("/fs/memfs/abc/1/2/3")},
+		6:  {dir: filepath.FromSlash("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
+		7:  {dir: filepath.FromSlash("/LICENSE"), err: (*os.PathError)(nil)},
+		8:  {dir: filepath.FromSlash("/README.md/testdata"), err: (*os.PathError)(nil)},
+		9:  {dir: filepath.FromSlash("/fs/memfs/memfs.go/abc"), err: (*os.PathError)(nil)},
+		10: {dir: filepath.FromSlash("/fs/memfs/memfs.go/abc/1/2/3"), err: (*os.PathError)(nil)},
+	}
+	for i, cas := range cases {
+		err := fs.MkdirAll(cas.dir, 0xD)
+		if cas.err == nil && err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if cas.err != nil && err == nil {
+			t.Errorf("want typeof(err)=%T; was nil (i=%d)", cas.err, i)
+			continue
+		}
+		if cas.err != nil && err != nil {
+			if reflect.TypeOf(cas.err) != reflect.TypeOf(err) {
+				t.Errorf("want typeof(err)=%T; was %T (i=%d)", cas.err, err, i)
+			}
+			continue
+		}
+		fi, err := fs.Stat(cas.dir)
+		if err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !fi.IsDir() {
+			t.Errorf("want fi.IsDir()=true; got false (i=%d)", i)
+		}
+	}
+}
+
 func TestOpen(t *testing.T) {
 	fs := fixture()
 	cases := [...]struct {
