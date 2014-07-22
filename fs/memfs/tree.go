@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"unicode"
 )
 
 // Box drawings symbols - http://unicode-table.com/en/sections/box-drawing/.
@@ -36,6 +37,10 @@ type CustomTree func(line []byte) (depth int, name []byte, err error)
 // Unix is a tree builder for the 'tree' Unix command.
 var Unix CustomTree
 
+// Ident is a tree builder for simplified tree representation, where each level
+// is idented with one tabulation character (\t) only.
+var Tab CustomTree
+
 func init() {
 	Unix = func(p []byte) (depth int, name []byte, err error) {
 		var n int
@@ -51,7 +56,12 @@ func init() {
 			err = fmt.Errorf("invalid syntax: %q", p)
 			return
 		}
-		name = bytes.TrimSpace(name[n+1:])
+		name = name[n+1:]
+		return
+	}
+	Tab = func(p []byte) (depth int, name []byte, err error) {
+		depth = bytes.Count(p, []byte{'\t'})
+		name = p[depth:]
 		return
 	}
 }
@@ -96,7 +106,7 @@ func (ct CustomTree) Create(r io.Reader) (fs FS, err error) {
 			io.Copy(ioutil.Discard, buf)
 			err, line = io.EOF, nil
 		} else {
-			depth, name, err = ct(line)
+			depth, name, err = ct(bytes.TrimRightFunc(line, unicode.IsSpace))
 		}
 		// Skip first iteration.
 		if len(prevName) != 0 {
@@ -126,15 +136,15 @@ func (ct CustomTree) Create(r io.Reader) (fs FS, err error) {
 	}
 }
 
-// UnixTree builds FS.Tree from buffer that contains tree-like (Unix command) output.
+// UnixTree builds FS.Tree from a buffer that contains tree-like (Unix command) output.
 //
 // Example:
 //
 //   var tree = []byte(`.
-//   └── dir
+//   └── dir
 //       └── file.txt`)
 //
-//   fs, _ = memfs.FromTree(tree)
+//   fs, _ = memfs.UnixTree(tree)
 //   fmt.Printf("%#v\n", fs)
 //   // Produces:
 //   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
@@ -142,7 +152,28 @@ func UnixTree(p []byte) (FS, error) {
 	return UnixTreeReader(bytes.NewBuffer(p))
 }
 
-// UnixTreeReader builds FS.Tree from io.Reader that contains tree-like output.
+// UnixTreeReader builds FS.Tree from a reader that contains tree-like output.
 func UnixTreeReader(r io.Reader) (FS, error) {
 	return Unix.Create(r)
+}
+
+// TabTree builds FS.Tree from a buffer that contains \t-separated file tree.
+//
+// Example:
+//
+//   var tree = []byte(`.
+//   dir
+//   	file.txt`)
+//
+//   fs, _ = memfs.TabTree(tree)
+//   fmt.Printf("%#v\n", fs)
+//   // Produces:
+//   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
+func TabTree(p []byte) (FS, error) {
+	return TabTreeReader(bytes.NewBuffer(p))
+}
+
+// TabTreeReader builds FS.Tree from a reader that contains \t-separated file tree.
+func TabTreeReader(r io.Reader) (FS, error) {
+	return Tab.Create(r)
 }
