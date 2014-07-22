@@ -103,16 +103,13 @@ func FromTreeReader(r io.Reader) (fs FS, err error) {
 		// error handling is deferred.
 		if len(line) == 0 {
 			if err == io.EOF {
-				break
+				err = nil
 			}
-			if err != nil {
-				return
-			}
+			return
 		}
 		// Parse a name of the the current node.
 		name = line[bytes.LastIndex(line, boxHorizontal):]
 		name = bytes.TrimSpace(name[bytes.Index(name, boxSpace)+1:])
 		prevDepth = depth
 	}
-	return
 }
