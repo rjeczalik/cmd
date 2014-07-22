@@ -165,9 +165,9 @@ var cases = [...]struct {
 	},
 }}
 
-func TestFromTree(t *testing.T) {
+func TestUnixTree(t *testing.T) {
 	for i, cas := range cases {
-		fs, err := FromTree(cas.p)
+		fs, err := UnixTree(cas.p)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
