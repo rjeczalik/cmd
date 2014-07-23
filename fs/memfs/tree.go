@@ -37,7 +37,7 @@ type CustomTree func(line []byte) (depth int, name []byte, err error)
 // Unix is a tree builder for the 'tree' Unix command.
 var Unix CustomTree
 
-// Ident is a tree builder for simplified tree representation, where each level
+// Tab is a tree builder for simplified tree representation, where each level
 // is idented with one tabulation character (\t) only.
 var Tab CustomTree
 
@@ -66,8 +66,9 @@ func init() {
 	}
 }
 
-// Create builds FS.Tree from given reader.
-func (ct CustomTree) Create(r io.Reader) (fs FS, err error) {
+// Tree builds FS.Tree from given reader using CustomTree callback for parsing
+// node's name and its depth in the tree.
+func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 	var (
 		dir       = Directory{}
 		buf       = bufio.NewReader(r)
@@ -146,15 +147,13 @@ func (ct CustomTree) Create(r io.Reader) (fs FS, err error) {
 //
 //   fs, _ = memfs.UnixTree(tree)
 //   fmt.Printf("%#v\n", fs)
+//
 //   // Produces:
 //   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
+//
+// UnixTree(p) is an short alternative to the Unix.Tree(bytes.NewReader(p)).
 func UnixTree(p []byte) (FS, error) {
-	return UnixTreeReader(bytes.NewBuffer(p))
-}
-
-// UnixTreeReader builds FS.Tree from a reader that contains tree-like output.
-func UnixTreeReader(r io.Reader) (FS, error) {
-	return Unix.Create(r)
+	return Unix.Tree(bytes.NewReader(p))
 }
 
 // TabTree builds FS.Tree from a buffer that contains \t-separated file tree.
@@ -169,11 +168,8 @@ func UnixTreeReader(r io.Reader) (FS, error) {
 //   fmt.Printf("%#v\n", fs)
 //   // Produces:
 //   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
+//
+// TabTree(p) is an short alternative to the Tab.Tree(bytes.NewReader(p)).
 func TabTree(p []byte) (FS, error) {
-	return TabTreeReader(bytes.NewBuffer(p))
-}
-
-// TabTreeReader builds FS.Tree from a reader that contains \t-separated file tree.
-func TabTreeReader(r io.Reader) (FS, error) {
-	return Tab.Create(r)
+	return Tab.Tree(bytes.NewReader(p))
 }
