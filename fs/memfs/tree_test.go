@@ -4,6 +4,7 @@ import "testing"
 
 var cases = [...]FS{{
 	Tree: Directory{
+		"out":         Directory{},
 		"out.gif":     File{},
 		"out.ogv":     File{},
 		"output2.gif": File{},
@@ -31,6 +32,7 @@ var cases = [...]FS{{
 							"util_test.go":  File{},
 						},
 						"testdata": Directory{
+							"test":     Directory{},
 							"tree.txt": File{},
 						},
 					},
@@ -45,6 +47,7 @@ var cases = [...]FS{{
 						"split_test.go": File{},
 					},
 					"README.md": File{},
+					"tmp":       Directory{},
 				},
 			},
 		},
@@ -68,6 +71,7 @@ var cases = [...]FS{{
 							},
 							"e1.txt": File{},
 							"e2.txt": File{},
+							"e":      Directory{},
 						},
 					},
 				},
@@ -75,7 +79,7 @@ var cases = [...]FS{{
 			"b2": Directory{
 				"c1": Directory{
 					"d1.txt": File{},
-					"d2.txt": File{},
+					"d2":     Directory{},
 					"d3.txt": File{},
 				},
 			},
@@ -98,6 +102,7 @@ var cases = [...]FS{{
 
 var unix = [...][]byte{
 	[]byte(`.
+├── out/
 ├── out.gif
 ├── out.ogv
 ├── output2.gif
@@ -118,6 +123,7 @@ var unix = [...][]byte{
 │   │   ├── util.go
 │   │   └── util_test.go
 │   └── testdata
+│       ├── test/
 │       └── tree.txt
 ├── LICENSE
 ├── netz
@@ -127,7 +133,8 @@ var unix = [...][]byte{
 │   ├── netz.go
 │   ├── split.go
 │   └── split_test.go
-└── README.md`),
+├── README.md
+└── tmp/`),
 	[]byte(`.
 ├── a
 │   ├── b1
@@ -142,11 +149,12 @@ var unix = [...][]byte{
 │   │               ├── _
 │   │               │   └── _.txt
 │   │               ├── e1.txt
-│   │               └── e2.txt
+│   │               ├── e2.txt
+│   │               └── e/
 │   └── b2
 │       └── c1
 │           ├── d1.txt
-│           ├── d2.txt
+│           ├── d2/
 │           └── d3.txt
 ├── a.txt
 └── w
@@ -157,11 +165,12 @@ var unix = [...][]byte{
         │       └── 1.txt
         └── y.txt
 
-14 directories, 13 files`),
+15 directories, 12 files`),
 }
 
 var tab = [...][]byte{
 	[]byte(`.
+out/
 out.gif
 out.ogv
 output2.gif
@@ -182,6 +191,7 @@ fs
 		util.go
 		util_test.go
 	testdata
+		test/
 		tree.txt
 LICENSE
 netz
@@ -191,7 +201,8 @@ netz
 	netz.go
 	split.go
 	split_test.go
-README.md`),
+README.md
+tmp/`),
 	[]byte(`.
 a
 	b1
@@ -207,10 +218,11 @@ a
 						_.txt
 					e1.txt
 					e2.txt
+					e/
 	b2
 		c1
 			d1.txt
-			d2.txt
+			d2/
 			d3.txt
 a.txt
 w

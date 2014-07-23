@@ -100,7 +100,6 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 		}
 	}
 	glob = append(glob, dir)
-	// TODO(rjeczalik: handle empty directories (= names ending with '/')
 	for {
 		line, err = buf.ReadBytes('\n')
 		if len(bytes.TrimSpace(line)) == 0 {
@@ -113,16 +112,24 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 		if len(prevName) != 0 {
 			// Insert the node from previous iteration - node is a directory when
 			// a diference of the tree depth > 0, a file otherwise.
-			p := string(prevName)
+			var (
+				name  string
+				value interface{}
+			)
+			if bytes.HasSuffix(prevName, []byte{'/'}) {
+				name, value = string(bytes.TrimRight(prevName, "/")), Directory{}
+			} else {
+				name, value = string(prevName), File{}
+			}
 			switch {
 			case depth > prevDepth:
 				d := Directory{}
-				dir[p], glob, dir = d, append(glob, dir), d
+				dir[name], glob, dir = d, append(glob, dir), d
 			case depth == prevDepth:
-				dir[p] = File{}
+				dir[name] = value
 			case depth < prevDepth:
 				n := max(len(glob)+depth-prevDepth, 0)
-				dir[p], dir, glob = File{}, glob[n], glob[:n]
+				dir[name], dir, glob = value, glob[n], glob[:n]
 			}
 		}
 		// A node from each iteration is handled on the next one. That's why the
