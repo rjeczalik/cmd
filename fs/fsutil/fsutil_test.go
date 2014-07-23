@@ -1,4 +1,4 @@
-package glob
+package fsutil
 
 import (
 	"path/filepath"

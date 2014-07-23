@@ -29,19 +29,19 @@ Package memfs provides an implementation for an in-memory filesystem.
 
 [godoc.org/github.com/rjeczalik/tools/fs/memfs](http://godoc.org/github.com/rjeczalik/tools/fs/memfs)
 
-## fs/glob [![GoDoc](https://godoc.org/github.com/rjeczalik/fs/tools/glob?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/glob)
+## fs/fsutil [![GoDoc](https://godoc.org/github.com/rjeczalik/fs/tools/fsutil?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs/fsutil)
 
-Package glob is a collection of functions useful for traversing a filesystem in all unusual ways.
+Package fsutil is a collection of various filesystem utility functions.
 
 *Installation*
 
 ```bash
-~ $ go get -u github.com/rjeczalik/tools/fs/glob
+~ $ go get -u github.com/rjeczalik/tools/fs/fsutil
 ```
 
 *Documentation*
 
-[godoc.org/github.com/rjeczalik/tools/fs/glob](http://godoc.org/github.com/rjeczalik/tools/fs/glob)
+[godoc.org/github.com/rjeczalik/tools/fs/fsutil](http://godoc.org/github.com/rjeczalik/tools/fs/fsutil)
 
 ## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
 

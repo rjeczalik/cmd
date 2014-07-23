@@ -1,6 +1,5 @@
-// Package glob is a collection of functions useful for traversing a filesystem
-// in all unusual ways.
-package glob
+// Package fsutil is a collection of various filesystem utility functions.
+package fsutil
 
 import (
 	"path/filepath"
