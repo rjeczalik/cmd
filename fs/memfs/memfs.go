@@ -304,7 +304,7 @@ type fileinfo struct {
 
 func (fi fileinfo) Name() string       { return fi.s }
 func (fi fileinfo) Size() int64        { return fi.n }
-func (fi fileinfo) Mode() os.FileMode  { return 0 }
+func (fi fileinfo) Mode() os.FileMode  { return 0755 }
 func (fi fileinfo) ModTime() time.Time { return time.Time{} }
 func (fi fileinfo) IsDir() bool        { return fi.d }
 func (fi fileinfo) Sys() interface{}   { return nil }
