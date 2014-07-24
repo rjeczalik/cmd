@@ -12,6 +12,8 @@ import (
 	"github.com/rjeczalik/tools/fs"
 )
 
+const sep = string(os.PathSeparator)
+
 // Directory represents an in-memory directory
 type Directory map[string]interface{}
 
@@ -33,66 +35,13 @@ var (
 	errCorrupted = errors.New("tree is corrupted")
 )
 
-const sep = string(os.PathSeparator)
-
-func (fs FS) dirwalk(p string, fn func(string) bool) {
-	if p == "" || p == "." {
-		return
-	}
-	i := strings.Index(p, sep) + 1
-	if i == 0 || i == len(p) {
-		return
-	}
-	for i < len(p) {
-		j := strings.Index(p[i:], sep)
-		if j == -1 {
-			j = len(p) - i
-		}
-		if !fn(p[i : i+j]) {
-			return
-		}
-		i += j + 1
-	}
-}
-
-func (fs FS) lookup(p string) (dir Directory, perr *os.PathError) {
-	dir = fs.Tree
-	fn := func(name string) bool {
-		v, ok := dir[name]
-		if !ok {
-			perr = &os.PathError{Err: os.ErrNotExist}
-			return false
-		}
-		if dir, ok = v.(Directory); !ok {
-			perr = &os.PathError{Err: errNotDir}
-			return false
-		}
-		return true
-	}
-	fs.dirwalk(p, fn)
-	return
-}
-
-func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
-	i := strings.LastIndex(p, sep)
-	if i == -1 {
-		return fs.Tree, "", nil
-	}
-	if i == 0 {
-		return fs.Tree, p[1:], nil
-	}
-	dir, perr := fs.lookup(p[:i])
+// Cd gives new filesystem with a root starting at the path of the old filesystem.
+func (fs FS) Cd(path string) (FS, error) {
+	dir, perr := fs.lookup(path)
 	if perr != nil {
-		perr.Path = p
-		return nil, "", perr
+		return FS{}, perr
 	}
-	return dir, p[i+1:], nil
-}
-
-func (fs FS) flushcb(dir Directory, name string) func([]byte) {
-	return func(p []byte) {
-		dir[name] = File(p)
-	}
+	return FS{Tree: dir}, nil
 }
 
 // Create creates an in-memory file under the given path.
@@ -203,6 +152,66 @@ func (fs FS) Stat(name string) (os.FileInfo, error) {
 		return nil, err
 	}
 	return f.Stat()
+}
+
+func (fs FS) dirwalk(p string, fn func(string) bool) {
+	if p == "" || p == "." {
+		return
+	}
+	i := strings.Index(p, sep) + 1
+	if i == 0 || i == len(p) {
+		return
+	}
+	for i < len(p) {
+		j := strings.Index(p[i:], sep)
+		if j == -1 {
+			j = len(p) - i
+		}
+		if !fn(p[i : i+j]) {
+			return
+		}
+		i += j + 1
+	}
+}
+
+func (fs FS) lookup(p string) (dir Directory, perr *os.PathError) {
+	dir = fs.Tree
+	fn := func(name string) bool {
+		v, ok := dir[name]
+		if !ok {
+			perr = &os.PathError{Err: os.ErrNotExist}
+			return false
+		}
+		if dir, ok = v.(Directory); !ok {
+			perr = &os.PathError{Err: errNotDir}
+			return false
+		}
+		return true
+	}
+	fs.dirwalk(p, fn)
+	return
+}
+
+func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
+	i := strings.LastIndex(p, sep)
+	if i == -1 {
+		return fs.Tree, "", nil
+	}
+	if i == 0 {
+		return fs.Tree, p[1:], nil
+	}
+	dir, perr := fs.lookup(p[:i])
+	if perr != nil {
+		perr.Path = p
+		return nil, "", perr
+	}
+	return dir, p[i+1:], nil
+}
+
+func (fs FS) flushcb(dir Directory, name string) func([]byte) {
+	return func(p []byte) {
+		dir[name] = File(p)
+	}
 }
 
 type file struct {

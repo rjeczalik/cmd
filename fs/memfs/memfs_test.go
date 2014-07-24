@@ -7,24 +7,17 @@ import (
 	"testing"
 )
 
-func fixture() FS {
-	return FS{
-		Tree: Directory{
-			"fs": Directory{
-				"fs.go": File{},
-				"memfs": Directory{
-					"memfs.go":      File{},
-					"memfs_test.go": File{},
-				},
-			},
-			"LICENSE":   File{},
-			"README.md": File{},
-		},
-	}
-}
+var small = []byte(".\nfs\n\tfs.go\n\tmemfs\n\t\tmemfs.go\n\t\tmemfs_test.go\n" +
+	"LICENSE\nREADME.md\n")
+
+var large = []byte(".\na\n\tb1\n\t\tc1\n\t\t\tc1.txt\n\t\tc2\n\t\t\tc2.txt\n\t\t" +
+	"c3\n\t\t\tc3.txt\n\t\t\td1\n\t\t\t\te1\n\t\t\t\t\t_\n\t\t\t\t\t\t_.txt" +
+	"\n\t\t\t\t\te1.txt\n\t\t\t\t\te2.txt\n\t\t\t\t\te/\n\tb2\n\t\tc1\n\t\t" +
+	"\td1.txt\n\t\t\td2/\n\t\t\td3.txt\na.txt\nw\n\tw.txt\n\tx\n\t\ty\n\t\t" +
+	"\tz\n\t\t\t\t1.txt\n\t\ty.txt\n")
 
 func TestCreate(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := [...]struct {
 		file string
 		err  error
@@ -76,7 +69,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestMkdir(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := [...]struct {
 		dir string
 		err error
@@ -124,7 +117,7 @@ func TestMkdir(t *testing.T) {
 }
 
 func TestMkdirAll(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := [...]struct {
 		dir string
 		err error
@@ -169,7 +162,7 @@ func TestMkdirAll(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := [...]struct {
 		path string
 		dir  bool
@@ -205,7 +198,7 @@ func TestOpen(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := [...]struct {
 		file string
 		err  error
@@ -251,7 +244,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestReaddir(t *testing.T) {
-	fs := fixture()
+	fs := Must(TabTree(small))
 	cases := map[string][]struct {
 		name string
 		dir  bool
@@ -297,6 +290,40 @@ func TestReaddir(t *testing.T) {
 				}
 			}
 			t.Errorf("%q not found in fi", path)
+		}
+	}
+}
+
+func TestCd(t *testing.T) {
+	fs := Must(TabTree(large))
+	cases := [...]struct {
+		path string
+		fs   []byte
+	}{{
+		"/a/b1/c3",
+		[]byte(".\nc3.txt\nd1\n\te1\n\t\t_\n\t\t\t_.txt\n\t\te1.txt\n\t\te2.txt\n\t\te/"),
+	}, {
+		"/a/b2",
+		[]byte(".\nc1\n\td1.txt\n\td2/\n\td3.txt"),
+	}, {
+		"/w/x",
+		[]byte(".\ny\n\tz\n\t\t1.txt\ny.txt"),
+	}, {
+		"/a/b1/c3/d1/e1/_",
+		[]byte(".\n_.txt"),
+	}, {
+		"/w/x/y/z",
+		[]byte(".\n1.txt"),
+	}}
+	for i, cas := range cases {
+		rhs := Must(TabTree(cas.fs))
+		lhs, err := fs.Cd(cas.path)
+		if err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !Compare(lhs, rhs) {
+			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
 }
