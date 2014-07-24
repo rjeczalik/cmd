@@ -7,44 +7,28 @@ import (
 	fs "github.com/rjeczalik/tools/fs/memfs"
 )
 
-var testdata = fs.FS{
-	Tree: fs.Directory{
-		"data": fs.Directory{
-			"github.com": fs.Directory{
-				"user": fs.Directory{
-					"example": fs.Directory{
-						".git": fs.Directory{},
-						"assets": fs.Directory{
-							"js": fs.Directory{
-								"app.js":  fs.File{},
-								"link.js": fs.File{},
-							},
-							"css": fs.Directory{
-								"default.css": fs.File{},
-							},
-						},
-						"dir": fs.Directory{
-							"dir.txt": fs.File{},
-						},
-					},
-				},
-			},
-		},
-		"src": fs.Directory{
-			"github.com": fs.Directory{
-				"user": fs.Directory{
-					"example": fs.Directory{
-						".git": fs.Directory{},
-						"dir": fs.Directory{
-							"dir.go": fs.File{},
-						},
-						"example.go": fs.File{},
-					},
-				},
-			},
-		},
-	},
-}
+var testdata = fs.Must(fs.TabTree([]byte(`.
+data
+	github.com
+		user
+			example
+				.git/
+				dir
+					dir.txt
+				assets
+					js
+						app.js
+						link.js
+					css
+						default.css
+src
+	github.com
+		user
+			example
+				.git/
+				dir
+					dir.go
+				example.go`)))
 
 func equal(lhs, rhs []string) bool {
 	if len(lhs) != len(rhs) {

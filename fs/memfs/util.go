@@ -3,7 +3,7 @@ package memfs
 // Compare returns true when the structure of the lhs and rhs is the same.
 // It does not compare the value of the Files between the trees. If both trees
 // are empty it returns true.
-func Compare(lhs, rhs *FS) bool {
+func Compare(lhs, rhs FS) bool {
 	type node struct{ lhs, rhs Directory }
 	var (
 		glob = []node{{lhs: lhs.Tree, rhs: rhs.Tree}}
@@ -41,7 +41,7 @@ func Compare(lhs, rhs *FS) bool {
 // Fsck checks the fs Tree whether each node has proper type: either a File or
 // a Directory. Moreover it fails when directory contains an element with
 // an empty name. Fsking empty tree gives true.
-func Fsck(fs *FS) bool {
+func Fsck(fs FS) bool {
 	var (
 		glob = []Directory{fs.Tree}
 		dir  Directory
@@ -62,4 +62,16 @@ func Fsck(fs *FS) bool {
 		}
 	}
 	return true
+}
+
+// Must is a helper that wraps a call to a function returning (FS, error) and
+// panics if the error is non-nil. It is intended for use in variable
+// initializations such as:
+//
+//   var fs = memfs.Must(memfs.TabTree([]byte(".\ndir\n\tfile.txt")))
+func Must(fs FS, err error) FS {
+	if err != nil {
+		panic(err)
+	}
+	return fs
 }

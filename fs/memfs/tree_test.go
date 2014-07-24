@@ -4,6 +4,12 @@ import "testing"
 
 var cases = [...]FS{{
 	Tree: Directory{
+		"dir": Directory{
+			"file.txt": File{},
+		},
+	},
+}, {
+	Tree: Directory{
 		"out":         Directory{},
 		"out.gif":     File{},
 		"out.ogv":     File{},
@@ -101,6 +107,7 @@ var cases = [...]FS{{
 }
 
 var unix = [...][]byte{
+	[]byte(".\n└── dir\n    ├── file.txt"),
 	[]byte(`.
 ├── out/
 ├── out.gif
@@ -169,6 +176,7 @@ var unix = [...][]byte{
 }
 
 var tab = [...][]byte{
+	[]byte(".\ndir\n\tfile.txt"),
 	[]byte(`.
 out/
 out.gif
@@ -241,7 +249,7 @@ func TestUnixTree(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(&fs, &cases[i]) {
+		if !Compare(fs, cases[i]) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
@@ -254,7 +262,7 @@ func TestTabTree(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(&fs, &cases[i]) {
+		if !Compare(fs, cases[i]) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}

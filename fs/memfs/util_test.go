@@ -77,7 +77,7 @@ func TestCompare(t *testing.T) {
 		false,
 	}}
 	for i, cas := range cases {
-		if Compare(&cas.lhs, &cas.rhs) != cas.ok {
+		if Compare(cas.lhs, cas.rhs) != cas.ok {
 			t.Errorf("want Compare(...)=%v; got %v (i=%d)", cas.ok, !cas.ok, i)
 		}
 	}
@@ -121,7 +121,7 @@ func TestFsck(t *testing.T) {
 		true,
 	}}
 	for i, cas := range cases {
-		if Fsck(&cas.fs) != cas.ok {
+		if Fsck(cas.fs) != cas.ok {
 			t.Errorf("want Fsck(...)=%v; got %v (i=%d)", cas.ok, !cas.ok, i)
 		}
 	}
