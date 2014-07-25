@@ -18,27 +18,34 @@ func TestTee(t *testing.T) {
 		open []string
 		read []string
 		fs   []byte
-	}{{
-		open: []string{"/w/x/y/z"},
-		fs:   []byte(".\nw\n\tx\n\t\ty\n\t\t\tz/"),
-	}, {
-		open: []string{"/a.txt", "/w/w.txt", "/a"},
-		fs:   []byte(".\na/\na.txt\nw\n\tw.txt"),
-	}, {
-		read: []string{"/a/b2/c1"},
-		fs:   []byte(".\na\n\tb2\n\t\tc1\n\t\t\td1.txt\n\t\t\td2/\n\t\t\td3.txt"),
-	}, {
-		read: []string{"/a/b1/c1", "/a/b1/c2", "/a/b1/c3"},
-		fs: []byte(".\na\n\tb1\n\t\tc1\n\t\t\tc1.txt\n\t\tc2\n\t\t\tc2.txt\n\t\t" +
-			"c3\n\t\t\tc3.txt\n\t\t\td1/"),
-		// TODO(rjeczalik)
-		// }, {
-		//	read: []string{"/w", "/w/x/y", "/w/x/y/z", "/w/x"},
-		//	fs:   []byte(".\nw\n\tw.txt\n\tx\n\t\ty\n\t\t\tz\n\t\t\t\t1.txt\n\t\ty.txt"),
-	}}
+	}{
+		0: {
+			open: []string{"/w/x/y/z"},
+			fs:   []byte(".\nw\n\tx\n\t\ty\n\t\t\tz/"),
+		},
+		1: {
+			open: []string{"/a.txt", "/w/w.txt", "/a"},
+			fs:   []byte(".\na/\na.txt\nw\n\tw.txt"),
+		},
+		2: {
+			read: []string{"/a/b2/c1"},
+			fs:   []byte(".\na\n\tb2\n\t\tc1\n\t\t\td1.txt\n\t\t\td2/\n\t\t\td3.txt"),
+		},
+		3: {
+			read: []string{"/a/b1/c1", "/a/b1/c2", "/a/b1/c3"},
+			fs: []byte(".\na\n\tb1\n\t\tc1\n\t\t\tc1.txt\n\t\tc2\n\t\t\tc2.txt\n\t\t" +
+				"c3\n\t\t\tc3.txt\n\t\t\td1/"),
+		},
+		4: {
+			read: []string{"/w", "/w/x/y", "/w/x/y/z", "/w/x"},
+			fs:   []byte(".\nw\n\tw.txt\n\tx\n\t\ty\n\t\t\tz\n\t\t\t\t1.txt\n\t\ty.txt"),
+		}}
 LOOP:
 	for i, cas := range cases {
-		spy := memfs.FS{Tree: memfs.Directory{}}
+		if i != 4 {
+			continue
+		}
+		spy := memfs.New()
 		tee := TeeFilesystem(fs, spy)
 		for j, path := range cas.open {
 			if _, err := tee.Open(path); err != nil {
@@ -57,8 +64,7 @@ LOOP:
 				continue LOOP
 			}
 		}
-		x := memfs.Must(memfs.TabTree(cas.fs))
-		if !memfs.Compare(spy, x) {
+		if !memfs.Compare(spy, memfs.Must(memfs.TabTree(cas.fs))) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
