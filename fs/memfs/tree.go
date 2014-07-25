@@ -152,13 +152,19 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 //   └── dir
 //       └── file.txt`)
 //
-//   fs, _ = memfs.UnixTree(tree)
-//   fmt.Printf("%#v\n", fs)
+//   var fs = memfs.Must(memfs.UnixTree(tree))
 //
-//   // Produces:
-//   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
+// The above is an equivalent to:
 //
-// UnixTree(p) is an short alternative to the Unix.Tree(bytes.NewReader(p)).
+//   var fs = memfs.FS{
+//              Tree: memfs.Directory{
+//                "dir": memfs.Directory{
+//                  "file.txt": memfs.File{},
+//                },
+//              },
+//            }
+//
+// UnixTree(p) is a short alternative to the Unix.Tree(bytes.NewReader(p)).
 func UnixTree(p []byte) (FS, error) {
 	return Unix.Tree(bytes.NewReader(p))
 }
@@ -167,16 +173,21 @@ func UnixTree(p []byte) (FS, error) {
 //
 // Example:
 //
-//   var tree = []byte(`.
-//   dir
-//   	file.txt`)
+//   var tree = []byte(`.\ndir\n\tfile1.txt\n\tfile2.txt`)
+//   var fs = memfs.Must(memfs.TabTree(tree))
 //
-//   fs, _ = memfs.TabTree(tree)
-//   fmt.Printf("%#v\n", fs)
-//   // Produces:
-//   // memfs.FS{Tree: memfs.Directory{"dir": memfs.Directory{"file": memfs.File{}}}}
+// The above is an equivalent to:
 //
-// TabTree(p) is an short alternative to the Tab.Tree(bytes.NewReader(p)).
+//   var fs = memfs.FS{
+//              Tree: memfs.Directory{
+//                "dir": memfs.Directory{
+//                  "file1.txt": memfs.File{},
+//                  "file2.txt": memfs.File{},
+//                },
+//              },
+//            }
+//
+// TabTree(p) is a short alternative to the Tab.Tree(bytes.NewReader(p)).
 func TabTree(p []byte) (FS, error) {
 	return Tab.Tree(bytes.NewReader(p))
 }
