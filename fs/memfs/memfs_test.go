@@ -116,6 +116,29 @@ func TestMkdir(t *testing.T) {
 	}
 }
 
+func TestMkdirNop(t *testing.T) {
+	fs := Must(TabTree(large))
+	cases := [...]string{
+		0: "/a/b1",
+		1: "/",
+		2: "/w/x/y",
+		3: "/a/b1/c3/d1",
+		4: "/a/b2/c1",
+	}
+	for i, mkdir := range []func(FS, string, os.FileMode) error{FS.Mkdir, FS.MkdirAll} {
+		for j, cas := range cases {
+			mutfs := Must(TabTree(large))
+			if err := mkdir(mutfs, cas, 0xD); err != nil {
+				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
+				continue
+			}
+			if !Compare(Must(mutfs.Cd(cas)), Must(fs.Cd(cas))) {
+				t.Errorf("want Compare(...)=true; got false (i=%d, j=%d)", i, j)
+			}
+		}
+	}
+}
+
 func TestMkdirAll(t *testing.T) {
 	fs := Must(TabTree(small))
 	cases := [...]struct {

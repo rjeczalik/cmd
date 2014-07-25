@@ -81,9 +81,10 @@ func (fs FS) Mkdir(name string, _ os.FileMode) error {
 		return nil
 	}
 	if v, ok := dir[base]; ok {
-		if _, ok = v.(File); ok {
-			return &os.PathError{"Mkdir", name, errNotDir}
+		if _, ok = v.(Directory); ok {
+			return nil
 		}
+		return &os.PathError{"Mkdir", name, errNotDir}
 	}
 	dir[base] = Directory{}
 	return nil
