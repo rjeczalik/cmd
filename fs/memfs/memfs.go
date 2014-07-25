@@ -27,6 +27,13 @@ type FS struct {
 	Tree Directory
 }
 
+// New returns an empty filesystem.
+func New() FS {
+	return FS{
+		Tree: Directory{},
+	}
+}
+
 var _ fs.Filesystem = FS{}
 
 var (
