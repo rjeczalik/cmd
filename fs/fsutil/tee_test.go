@@ -1,6 +1,7 @@
 package fsutil
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/rjeczalik/tools/fs/memfs"
@@ -48,13 +49,13 @@ LOOP:
 		spy := memfs.New()
 		tee := TeeFilesystem(fs, spy)
 		for j, path := range cas.open {
-			if _, err := tee.Open(path); err != nil {
+			if _, err := tee.Open(filepath.FromSlash(path)); err != nil {
 				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
 				continue LOOP
 			}
 		}
 		for j, path := range cas.read {
-			f, err := tee.Open(path)
+			f, err := tee.Open(filepath.FromSlash(path))
 			if err != nil {
 				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
 				continue LOOP

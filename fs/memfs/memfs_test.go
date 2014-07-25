@@ -22,24 +22,25 @@ func TestCreate(t *testing.T) {
 		file string
 		err  error
 	}{
-		0:  {file: filepath.FromSlash("c:/fs/memfs/all_test.go")},
-		1:  {file: filepath.FromSlash("/LICENSE")},
-		2:  {file: filepath.FromSlash("c:/fs/fs.go")},
-		3:  {file: filepath.FromSlash("/LICENSE.md")},
-		4:  {file: filepath.FromSlash("/fs/fs_test.go")},
-		5:  {file: filepath.FromSlash("/"), err: (*os.PathError)(nil)},
-		6:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
-		7:  {file: filepath.FromSlash("c:/"), err: (*os.PathError)(nil)},
-		8:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
-		9:  {file: filepath.FromSlash("/fs/memfs"), err: (*os.PathError)(nil)},
-		10: {file: filepath.FromSlash("/.git/config"), err: (*os.PathError)(nil)},
-		11: {file: filepath.FromSlash("/fs/.svn/config"), err: (*os.PathError)(nil)},
-		12: {file: filepath.FromSlash("/LICENSE/OTHER.md"), err: (*os.PathError)(nil)},
-		13: {file: filepath.FromSlash("/fs/fs.go/detail.go"), err: (*os.PathError)(nil)},
-		14: {file: filepath.FromSlash("/fs/memfs/nfs/nfs.go"), err: (*os.PathError)(nil)},
+		0:  {file: "c:/fs/memfs/all_test.go"},
+		1:  {file: "/LICENSE"},
+		2:  {file: "c:/fs/fs.go"},
+		3:  {file: "/LICENSE.md"},
+		4:  {file: "/fs/fs_test.go"},
+		5:  {file: "/", err: (*os.PathError)(nil)},
+		6:  {file: "c:", err: (*os.PathError)(nil)},
+		7:  {file: "c:/", err: (*os.PathError)(nil)},
+		8:  {file: "/fs", err: (*os.PathError)(nil)},
+		9:  {file: "/fs/memfs", err: (*os.PathError)(nil)},
+		10: {file: "/.git/config", err: (*os.PathError)(nil)},
+		11: {file: "/fs/.svn/config", err: (*os.PathError)(nil)},
+		12: {file: "/LICENSE/OTHER.md", err: (*os.PathError)(nil)},
+		13: {file: "/fs/fs.go/detail.go", err: (*os.PathError)(nil)},
+		14: {file: "/fs/memfs/nfs/nfs.go", err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
-		f, err := fs.Create(cas.file)
+		file := filepath.FromSlash(cas.file)
+		f, err := fs.Create(file)
 		if cas.err == nil && err != nil {
 			t.Errorf("want err=nil; was %q (i=%d)", err, i)
 			continue
@@ -59,8 +60,8 @@ func TestCreate(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if fi.Name() != cas.file {
-			t.Errorf("want fi.Name()=%q; got %q (i=%d)", cas.file, fi.Name(), i)
+		if fi.Name() != file {
+			t.Errorf("want fi.Name()=%q; got %q (i=%d)", file, fi.Name(), i)
 		}
 		if fi.IsDir() {
 			t.Errorf("want fi.IsDir()=false; got true (i=%d)", i)
@@ -74,20 +75,21 @@ func TestMkdir(t *testing.T) {
 		dir string
 		err error
 	}{
-		0:  {dir: filepath.FromSlash("/testdata")},
-		1:  {dir: filepath.FromSlash("/fs/testdata")},
-		2:  {dir: filepath.FromSlash("c:/fs/memfs/testdata")},
-		3:  {dir: filepath.FromSlash("c:/testdata")},
-		4:  {dir: filepath.FromSlash("c:/")},
-		5:  {dir: filepath.FromSlash("/")},
-		6:  {dir: filepath.FromSlash("c:/LICENSE"), err: (*os.PathError)(nil)},
-		7:  {dir: filepath.FromSlash("c:/LICENSE/testdata"), err: (*os.PathError)(nil)},
-		8:  {dir: filepath.FromSlash("/fs/memfs/memfs.go"), err: (*os.PathError)(nil)},
-		9:  {dir: filepath.FromSlash("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
-		10: {dir: filepath.FromSlash("c:/fs/memfs/memfs_test.go"), err: (*os.PathError)(nil)},
+		0:  {dir: "/testdata"},
+		1:  {dir: "/fs/testdata"},
+		2:  {dir: "c:/fs/memfs/testdata"},
+		3:  {dir: "c:/testdata"},
+		4:  {dir: "c:/"},
+		5:  {dir: "/"},
+		6:  {dir: "c:/LICENSE", err: (*os.PathError)(nil)},
+		7:  {dir: "c:/LICENSE/testdata", err: (*os.PathError)(nil)},
+		8:  {dir: "/fs/memfs/memfs.go", err: (*os.PathError)(nil)},
+		9:  {dir: "/fs/fs.go/testdata", err: (*os.PathError)(nil)},
+		10: {dir: "c:/fs/memfs/memfs_test.go", err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
-		err := fs.Mkdir(cas.dir, 0xD)
+		dir := filepath.FromSlash(cas.dir)
+		err := fs.Mkdir(dir, 0xD)
 		if cas.err == nil && err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -102,13 +104,13 @@ func TestMkdir(t *testing.T) {
 			}
 			continue
 		}
-		fi, err := fs.Stat(cas.dir)
+		fi, err := fs.Stat(dir)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if fi.Name() != cas.dir {
-			t.Errorf("want fi.Name()=%q; got %q (i=%d)", cas.dir, fi.Name(), i)
+		if fi.Name() != dir {
+			t.Errorf("want fi.Name()=%q; got %q (i=%d)", dir, fi.Name(), i)
 		}
 		if !fi.IsDir() {
 			t.Errorf("want fi.IsDir()=true; got false (i=%d)", i)
@@ -127,12 +129,13 @@ func TestMkdirNop(t *testing.T) {
 	}
 	for i, mkdir := range []func(FS, string, os.FileMode) error{FS.Mkdir, FS.MkdirAll} {
 		for j, cas := range cases {
+			dir := filepath.FromSlash(cas)
 			mutfs := Must(TabTree(large))
-			if err := mkdir(mutfs, cas, 0xD); err != nil {
+			if err := mkdir(mutfs, dir, 0xD); err != nil {
 				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
 				continue
 			}
-			if !Compare(Must(mutfs.Cd(cas)), Must(fs.Cd(cas))) {
+			if !Compare(Must(mutfs.Cd(dir)), Must(fs.Cd(dir))) {
 				t.Errorf("want Compare(...)=true; got false (i=%d, j=%d)", i, j)
 			}
 		}
@@ -145,20 +148,21 @@ func TestMkdirAll(t *testing.T) {
 		dir string
 		err error
 	}{
-		0:  {dir: filepath.FromSlash("/")},
-		1:  {dir: filepath.FromSlash("/abc")},
-		2:  {dir: filepath.FromSlash("/abc/1/2/3")},
-		3:  {dir: filepath.FromSlash("/fs/abc")},
-		4:  {dir: filepath.FromSlash("/fs/abc/1/2/3")},
-		5:  {dir: filepath.FromSlash("/fs/memfs/abc/1/2/3")},
-		6:  {dir: filepath.FromSlash("/fs/fs.go/testdata"), err: (*os.PathError)(nil)},
-		7:  {dir: filepath.FromSlash("/LICENSE"), err: (*os.PathError)(nil)},
-		8:  {dir: filepath.FromSlash("/README.md/testdata"), err: (*os.PathError)(nil)},
-		9:  {dir: filepath.FromSlash("/fs/memfs/memfs.go/abc"), err: (*os.PathError)(nil)},
-		10: {dir: filepath.FromSlash("/fs/memfs/memfs.go/abc/1/2/3"), err: (*os.PathError)(nil)},
+		0:  {dir: "/"},
+		1:  {dir: "/abc"},
+		2:  {dir: "/abc/1/2/3"},
+		3:  {dir: "/fs/abc"},
+		4:  {dir: "/fs/abc/1/2/3"},
+		5:  {dir: "/fs/memfs/abc/1/2/3"},
+		6:  {dir: "/fs/fs.go/testdata", err: (*os.PathError)(nil)},
+		7:  {dir: "/LICENSE", err: (*os.PathError)(nil)},
+		8:  {dir: "/README.md/testdata", err: (*os.PathError)(nil)},
+		9:  {dir: "/fs/memfs/memfs.go/abc", err: (*os.PathError)(nil)},
+		10: {dir: "/fs/memfs/memfs.go/abc/1/2/3", err: (*os.PathError)(nil)},
 	}
 	for i, cas := range cases {
-		err := fs.MkdirAll(cas.dir, 0xD)
+		dir := filepath.FromSlash(cas.dir)
+		err := fs.MkdirAll(dir, 0xD)
 		if cas.err == nil && err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -173,7 +177,7 @@ func TestMkdirAll(t *testing.T) {
 			}
 			continue
 		}
-		fi, err := fs.Stat(cas.dir)
+		fi, err := fs.Stat(dir)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -190,18 +194,19 @@ func TestOpen(t *testing.T) {
 		path string
 		dir  bool
 	}{
-		0: {path: filepath.FromSlash("c:/"), dir: true},
-		1: {path: filepath.FromSlash("/"), dir: true},
-		2: {path: filepath.FromSlash("/fs"), dir: true},
-		3: {path: filepath.FromSlash("c:/fs/memfs"), dir: true},
-		4: {path: filepath.FromSlash("/LICENSE"), dir: false},
-		5: {path: filepath.FromSlash("c:/README.md"), dir: false},
-		6: {path: filepath.FromSlash("/fs/fs.go"), dir: false},
-		7: {path: filepath.FromSlash("c:/fs/memfs/memfs.go"), dir: false},
-		8: {path: filepath.FromSlash("/fs/memfs/memfs_test.go"), dir: false},
+		0: {"c:/", true},
+		1: {"/", true},
+		2: {"/fs", true},
+		3: {"c:/fs/memfs", true},
+		4: {"/LICENSE", false},
+		5: {"c:/README.md", false},
+		6: {"/fs/fs.go", false},
+		7: {"c:/fs/memfs/memfs.go", false},
+		8: {"/fs/memfs/memfs_test.go", false},
 	}
 	for i, cas := range cases {
-		f, err := fs.Open(cas.path)
+		path := filepath.FromSlash(cas.path)
+		f, err := fs.Open(path)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -211,8 +216,8 @@ func TestOpen(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if fi.Name() != cas.path {
-			t.Errorf("want fi.Name()=%q; got %q (i=%d)", cas.path, fi.Name(), i)
+		if fi.Name() != path {
+			t.Errorf("want fi.Name()=%q; got %q (i=%d)", path, fi.Name(), i)
 		}
 		if fi.IsDir() != cas.dir {
 			t.Errorf("want fi.IsDir()=%v; got %v (i=%d)", cas.dir, fi.IsDir(), i)
@@ -226,20 +231,21 @@ func TestRemove(t *testing.T) {
 		file string
 		err  error
 	}{
-		0:  {file: filepath.FromSlash("/LICENSE")},
-		1:  {file: filepath.FromSlash("/README.md")},
-		2:  {file: filepath.FromSlash("/fs"), err: (*os.PathError)(nil)},
-		3:  {file: filepath.FromSlash("/fs/fs.go")},
-		4:  {file: filepath.FromSlash("/fs/memfs"), err: (*os.PathError)(nil)},
-		5:  {file: filepath.FromSlash("/fs/memfs/memfs.go")},
-		6:  {file: filepath.FromSlash("/fs/memfs/memfs_test.go")},
-		7:  {file: filepath.FromSlash("/"), err: (*os.PathError)(nil)},
-		8:  {file: filepath.FromSlash("c:"), err: (*os.PathError)(nil)},
-		9:  {file: filepath.FromSlash("/er234"), err: os.ErrNotExist},
-		10: {file: filepath.FromSlash("/fs/dfgdft345"), err: os.ErrNotExist},
+		0:  {file: "/LICENSE"},
+		1:  {file: "/README.md"},
+		2:  {file: "/fs", err: (*os.PathError)(nil)},
+		3:  {file: "/fs/fs.go"},
+		4:  {file: "/fs/memfs", err: (*os.PathError)(nil)},
+		5:  {file: "/fs/memfs/memfs.go"},
+		6:  {file: "/fs/memfs/memfs_test.go"},
+		7:  {file: "/", err: (*os.PathError)(nil)},
+		8:  {file: "c:", err: (*os.PathError)(nil)},
+		9:  {file: "/er234", err: os.ErrNotExist},
+		10: {file: "/fs/dfgdft345", err: os.ErrNotExist},
 	}
 	for i, cas := range cases {
-		err := fs.Remove(cas.file)
+		file := filepath.FromSlash(cas.file)
+		err := fs.Remove(file)
 		if cas.err == nil && err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -260,7 +266,7 @@ func TestRemove(t *testing.T) {
 			}
 			continue
 		}
-		if _, err := fs.Stat(cas.file); !os.IsNotExist(err) {
+		if _, err := fs.Stat(file); !os.IsNotExist(err) {
 			t.Errorf("want os.IsNotExist(%v)=true (i=%d)", err, i)
 		}
 	}
@@ -272,21 +278,22 @@ func TestReaddir(t *testing.T) {
 		name string
 		dir  bool
 	}{
-		filepath.FromSlash("/"): {
+		"/": {
 			{"fs", true},
 			{"LICENSE", false},
 			{"README.md", false},
 		},
-		filepath.FromSlash("/fs"): {
+		"/fs": {
 			{"fs.go", false},
 			{"memfs", true},
 		},
-		filepath.FromSlash("c:/fs/memfs"): {
+		"c:/fs/memfs": {
 			{"memfs.go", false},
 			{"memfs_test.go", false},
 		},
 	}
 	for path, cas := range cases {
+		path = filepath.FromSlash(path)
 		dir, err := fs.Open(path)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (path=%q)", err, path)
@@ -339,8 +346,9 @@ func TestCd(t *testing.T) {
 		[]byte(".\n1.txt"),
 	}}
 	for i, cas := range cases {
+		path := filepath.FromSlash(cas.path)
 		rhs := Must(TabTree(cas.fs))
-		lhs, err := fs.Cd(cas.path)
+		lhs, err := fs.Cd(path)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
