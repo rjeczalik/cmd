@@ -1,5 +1,13 @@
 package memfs
 
+func dirlen(d Directory) (n int) {
+	n = len(d)
+	if _, ok := d[""].(Property); ok {
+		n--
+	}
+	return
+}
+
 // Compare returns true when the structure of the lhs and rhs is the same.
 // It does not compare the value of the Files between the trees. If both trees
 // are empty it returns true.
@@ -11,10 +19,14 @@ func Compare(lhs, rhs FS) bool {
 	)
 	for len(glob) > 0 {
 		nod, glob = glob[len(glob)-1], glob[:len(glob)-1]
-		if len(nod.lhs) != len(nod.rhs) {
+		if dirlen(nod.lhs) != dirlen(nod.rhs) {
 			return false
 		}
 		for k, lv := range nod.lhs {
+			// Ignore special empty key.
+			if k == "" {
+				continue
+			}
 			rv, ok := nod.rhs[k]
 			if !ok {
 				return false
@@ -48,8 +60,12 @@ func Fsck(fs FS) bool {
 	)
 	for len(glob) > 0 {
 		dir, glob = glob[len(glob)-1], glob[:len(glob)-1]
+	LOOP:
 		for k, v := range dir {
 			if k == "" {
+				if _, ok := v.(Property); ok {
+					continue LOOP
+				}
 				return false
 			}
 			switch v := v.(type) {

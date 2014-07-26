@@ -48,6 +48,22 @@ func TestCompare(t *testing.T) {
 		FS{Tree: Directory{"dir1": Directory{}, "dir2": Directory{}}},
 		true,
 	}, {
+		FS{Tree: Directory{"": Property{}, "file": File{}, "dir": Directory{"dir": Directory{}}}},
+		FS{Tree: Directory{"file": File{}, "dir": Directory{"file": File{}}}},
+		false,
+	}, {
+		FS{Tree: Directory{"file1": File{}, "file2": File{}, "file3": File{}}},
+		FS{Tree: Directory{"": Property{}, "file1": File{}, "file2": File{}, "file3": File{}}},
+		true,
+	}, {
+		FS{Tree: Directory{"": Property{}, "file": File{}, "dir": Directory{"dir": Directory{}}}},
+		FS{Tree: Directory{"": Property{}, "file": File{}, "dir": Directory{"file": File{}}}},
+		false,
+	}, {
+		FS{Tree: Directory{"": Property{}, "file1": File{}, "file2": File{}, "file3": File{}}},
+		FS{Tree: Directory{"": Property{}, "file1": File{}, "file2": File{}, "file3": File{}}},
+		true,
+	}, {
 		FS{Tree: Directory{
 			"dir1":  Directory{"file11": File{}, "file12": File{}, "dir13": Directory{}},
 			"dir2":  Directory{"file21": File{}, "file22": File{}, "dir23": Directory{}},
@@ -111,6 +127,9 @@ func TestFsck(t *testing.T) {
 	}, {
 		FS{Tree: Directory{"dir": Directory{"dir": Directory{"": File{}}}}},
 		false,
+	}, {
+		FS{Tree: Directory{"dir": Directory{"dir": Directory{"": Property{}}}}},
+		true,
 	}, {
 		FS{Tree: Directory{
 			"dir1":  Directory{"file11": File{}, "file12": File{}, "dir13": Directory{}},

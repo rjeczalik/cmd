@@ -12,13 +12,60 @@ import (
 	"github.com/rjeczalik/tools/fs"
 )
 
+// TODO(rjeczalik): do check Property for directory access and file read/write.
+
 const sep = string(os.PathSeparator)
 
-// Directory represents an in-memory directory
+// Umask defines a default file mode creation mask. When not specified explicitely,
+// new files has default permission bits equal to 0666 & ~Umask, and 0777 & ~Umask
+// for directories.
+var Umask os.FileMode = 0002
+
+// Property defines file mode and modification time values for a File and a Directory.
+//
+// Example
+//
+// To change propety of a File, change its embedded Property value:
+//
+//   var authorized = File{Property{0600, time.Now()}}
+//
+// To change property of a Directory, define it for a special empty key:
+//
+//   var dotssh = Directory{"": Property{0700}, "authorized_keys": authorized}
+type Property struct {
+	Mode    os.FileMode // permission bits
+	ModTime time.Time   // last modification time
+}
+
+var nilp Property
+
+func readproperty(v interface{}) Property {
+	switch v := v.(type) {
+	case File:
+		if v.Property != nilp {
+			return v.Property
+		}
+		return Property{Mode: 0666 & ^Umask}
+	case Directory:
+		if p, ok := v[""].(Property); ok {
+			return p
+		}
+		return Property{Mode: 0777 & ^Umask}
+	}
+	panic(errCorrupted)
+}
+
+// Directory represents an in-memory directory. Valid directory has each value
+// of a File or Directory type, where a key of such value must be non-empty
+// and contain no backward nor forward slashes. An empty key has a special
+// treatment - when defined, its value must be of a Property type.
 type Directory map[string]interface{}
 
 // File represents an in-memory file.
-type File []byte
+type File struct {
+	Property        // file properties
+	Content  []byte // file content
+}
 
 // FS provides an implementation for Filesystem interface, operating on
 // an in-memory file tree.
@@ -71,7 +118,7 @@ func (fs FS) Create(name string) (fs.File, error) {
 }
 
 // Mkdir creates an in-memory directory under the given path.
-func (fs FS) Mkdir(name string, _ os.FileMode) error {
+func (fs FS) Mkdir(name string, perm os.FileMode) error {
 	dir, base, perr := fs.dirbase(name)
 	if perr != nil {
 		perr.Op = "Mkdir"
@@ -86,7 +133,7 @@ func (fs FS) Mkdir(name string, _ os.FileMode) error {
 		}
 		return &os.PathError{"Mkdir", name, errNotDir}
 	}
-	dir[base] = Directory{}
+	dir[base] = Directory{"": Property{Mode: perm}}
 	return nil
 }
 
@@ -126,7 +173,7 @@ func (fs FS) Open(name string) (fs.File, error) {
 	}
 	switch v := dir[base].(type) {
 	case File:
-		return file{s: name, f: fs.flushcb(dir, base), r: bytes.NewReader([]byte(v))}, nil
+		return file{s: name, f: fs.flushcb(dir, base), r: bytes.NewReader([]byte(v.Content))}, nil
 	case Directory:
 		return directory{s: name, d: v}, nil
 	}
@@ -217,13 +264,17 @@ func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
 }
 
 func (fs FS) flushcb(dir Directory, name string) func([]byte) {
+	// TODO(rjeczalik): return error if dir[name] is not of a File type
 	return func(p []byte) {
-		dir[name] = File(p)
+		f := dir[name].(File)
+		f.Content = p
+		dir[name] = f
 	}
 }
 
 type file struct {
-	s string        // name
+	p Property      // file properties
+	s string        // file name
 	f func([]byte)  // flush callback
 	r *bytes.Reader // for reading (io.Seeker)
 	w *bytes.Buffer // for writing - merge?
@@ -250,7 +301,7 @@ func (f file) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (f file) Stat() (os.FileInfo, error) {
-	return fileinfo{f.s, int64(f.r.Len()), false}, nil
+	return fileinfo{f.p, f.s, int64(f.r.Len()), false}, nil
 }
 
 func (f file) Write(p []byte) (int, error) {
@@ -283,10 +334,24 @@ func (d directory) Readdir(n int) (fi []os.FileInfo, err error) {
 	}
 	fi = make([]os.FileInfo, 0, len(d.d))
 	for k, v := range d.d {
+		// Ignore special empty key.
+		if k == "" {
+			continue
+		}
 		if f, ok := v.(File); ok {
-			fi = append(fi, fileinfo{filepath.Join(d.s, k), int64(len(f)), false})
+			fi = append(fi, fileinfo{
+				readproperty(v),
+				filepath.Join(d.s, k),
+				int64(len(f.Content)),
+				false,
+			})
 		} else {
-			fi = append(fi, fileinfo{filepath.Join(d.s, k), 0, true})
+			fi = append(fi, fileinfo{
+				readproperty(v),
+				filepath.Join(d.s, k),
+				0,
+				true,
+			})
 		}
 	}
 	return
@@ -297,7 +362,7 @@ func (d directory) Seek(int64, int) (int64, error) {
 }
 
 func (d directory) Stat() (os.FileInfo, error) {
-	return fileinfo{d.s, 0, true}, nil
+	return fileinfo{readproperty(d.d), d.s, 0, true}, nil
 }
 
 func (d directory) Write([]byte) (int, error) {
@@ -305,6 +370,7 @@ func (d directory) Write([]byte) (int, error) {
 }
 
 type fileinfo struct {
+	p Property
 	s string
 	n int64
 	d bool
@@ -312,7 +378,7 @@ type fileinfo struct {
 
 func (fi fileinfo) Name() string       { return fi.s }
 func (fi fileinfo) Size() int64        { return fi.n }
-func (fi fileinfo) Mode() os.FileMode  { return 0755 }
-func (fi fileinfo) ModTime() time.Time { return time.Time{} }
+func (fi fileinfo) Mode() os.FileMode  { return fi.p.Mode }
+func (fi fileinfo) ModTime() time.Time { return fi.p.ModTime }
 func (fi fileinfo) IsDir() bool        { return fi.d }
 func (fi fileinfo) Sys() interface{}   { return nil }
