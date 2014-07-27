@@ -329,22 +329,27 @@ func TestCd(t *testing.T) {
 	cases := [...]struct {
 		path string
 		fs   []byte
-	}{{
-		"/a/b1/c3",
-		[]byte(".\nc3.txt\nd1\n\te1\n\t\t_\n\t\t\t_.txt\n\t\te1.txt\n\t\te2.txt\n\t\te/"),
-	}, {
-		"/a/b2",
-		[]byte(".\nc1\n\td1.txt\n\td2/\n\td3.txt"),
-	}, {
-		"/w/x",
-		[]byte(".\ny\n\tz\n\t\t1.txt\ny.txt"),
-	}, {
-		"/a/b1/c3/d1/e1/_",
-		[]byte(".\n_.txt"),
-	}, {
-		"/w/x/y/z",
-		[]byte(".\n1.txt"),
-	}}
+	}{
+		0: {
+			"/a/b1/c3",
+			[]byte(".\nc3.txt\nd1\n\te1\n\t\t_\n\t\t\t_.txt\n\t\te1.txt\n\t\te2.txt\n\t\te/"),
+		},
+		1: {
+			"/a/b2",
+			[]byte(".\nc1\n\td1.txt\n\td2/\n\td3.txt"),
+		},
+		2: {
+			"/w/x",
+			[]byte(".\ny\n\tz\n\t\t1.txt\ny.txt"),
+		},
+		3: {
+			"/a/b1/c3/d1/e1/_",
+			[]byte(".\n_.txt"),
+		},
+		4: {
+			"/w/x/y/z",
+			[]byte(".\n1.txt"),
+		}}
 	for i, cas := range cases {
 		path := filepath.FromSlash(cas.path)
 		rhs := Must(TabTree(cas.fs))
@@ -355,6 +360,79 @@ func TestCd(t *testing.T) {
 		}
 		if !Equal(lhs, rhs) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
+		}
+	}
+}
+
+func TestWalk(t *testing.T) {
+	fs := Must(TabTree(large))
+	cases := [...]struct {
+		root  string
+		files map[string]bool // true -> directory, false -> file
+	}{{
+		"/a/b1/c1",
+		map[string]bool{
+			filepath.FromSlash("/a/b1/c1"):        true,
+			filepath.FromSlash("/a/b1/c1/c1.txt"): false,
+		},
+	}, {
+		"/a/b1/c3/d1",
+		map[string]bool{
+			filepath.FromSlash("/a/b1/c3/d1"):            true,
+			filepath.FromSlash("/a/b1/c3/d1/e1"):         true,
+			filepath.FromSlash("/a/b1/c3/d1/e1/_"):       true,
+			filepath.FromSlash("/a/b1/c3/d1/e1/_/_.txt"): false,
+			filepath.FromSlash("/a/b1/c3/d1/e1/e1.txt"):  false,
+			filepath.FromSlash("/a/b1/c3/d1/e1/e2.txt"):  false,
+			filepath.FromSlash("/a/b1/c3/d1/e1/e"):       true,
+		},
+	}, {
+		"/w",
+		map[string]bool{
+			filepath.FromSlash("/w"):             true,
+			filepath.FromSlash("/w/w.txt"):       false,
+			filepath.FromSlash("/w/x"):           true,
+			filepath.FromSlash("/w/x/y"):         true,
+			filepath.FromSlash("/w/x/y/z"):       true,
+			filepath.FromSlash("/w/x/y/z/1.txt"): false,
+			filepath.FromSlash("/w/x/y.txt"):     false,
+		},
+	}, {
+		"/a/b2",
+		map[string]bool{
+			filepath.FromSlash("/a/b2"):           true,
+			filepath.FromSlash("/a/b2/c1"):        true,
+			filepath.FromSlash("/a/b2/c1/d1.txt"): false,
+			filepath.FromSlash("/a/b2/c1/d2"):     true,
+			filepath.FromSlash("/a/b2/c1/d3.txt"): false,
+		},
+	}, {
+		"/a/b1/c3/d1/e1/_",
+		map[string]bool{
+			filepath.FromSlash("/a/b1/c3/d1/e1/_"):       true,
+			filepath.FromSlash("/a/b1/c3/d1/e1/_/_.txt"): false,
+		},
+	}, {
+		"/a/b2/c1/d2",
+		map[string]bool{
+			filepath.FromSlash("/a/b2/c1/d2"): true,
+		},
+	}}
+	for i, cas := range cases {
+		files := make(map[string]bool, len(cas.files))
+		fn := func(path string, fi os.FileInfo, _ error) (err error) {
+			if path != fi.Name() {
+				t.Errorf("want path=%q; got %q (i=%d)", fi.Name(), path, i)
+			}
+			files[path] = fi.IsDir()
+			return
+		}
+		if err := fs.Walk(filepath.FromSlash(cas.root), fn); err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !reflect.DeepEqual(files, cas.files) {
+			t.Errorf("want DeepEqual(...)=true; got false (i=%d)", i)
 		}
 	}
 }

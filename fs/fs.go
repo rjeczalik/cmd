@@ -1,7 +1,10 @@
 // Package fs provides an interface for a filesystem.
 package fs
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 // File is an almost complete interface for the *os.File.
 type File interface {
@@ -39,6 +42,9 @@ type Filesystem interface {
 	Remove(string) error
 	// Stat gives a file or a directory details, given by the path.
 	Stat(string) (os.FileInfo, error)
+	// Walk walks the file tree starting at root, calling WalkFunc for each file
+	// or directory.
+	Walk(string, filepath.WalkFunc) error
 }
 
 // FS provides an implementation for Filesystem interface, wrapping functions
@@ -73,6 +79,11 @@ func (FS) Remove(name string) error {
 // Stat wraps os.Stat.
 func (FS) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
+}
+
+// Walk wraps filepath.Walk.
+func (FS) Walk(root string, fn filepath.WalkFunc) error {
+	return filepath.Walk(root, fn)
 }
 
 // Default is the default implementation of Filesystem, which wraps functions

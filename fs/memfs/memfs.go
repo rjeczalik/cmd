@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -61,11 +62,44 @@ var (
 	errCorrupted = errors.New("tree is corrupted")
 )
 
+// Order
+type Order uint8
+
+const (
+	OrderLexicalAsc Order = iota
+	OrderLexicalDesc
+)
+
 // Directory represents an in-memory directory. Valid directory has each value
 // of a File or Directory type, where a key of such value must be non-empty
 // and contain no backward nor forward slashes. An empty key has a special
 // treatment - when defined, its value must be of a Property type.
 type Directory map[string]interface{}
+
+// Ls lists all the files of d directory in given order. It returns nil if
+// the directory is empty.
+func (d Directory) Ls(order Order) []string {
+	if dirlen(d) == 0 {
+		return nil
+	}
+	s := make([]string, 0, dirlen(d))
+	for k := range d {
+		// Ignore a Property key.
+		if k == "" {
+			continue
+		}
+		s = append(s, k)
+	}
+	switch order {
+	case OrderLexicalAsc:
+		sort.StringSlice(s).Sort()
+	case OrderLexicalDesc:
+		sort.Sort(sort.Reverse(sort.StringSlice(s)))
+	default:
+		panic("invalid order")
+	}
+	return s
+}
 
 // File represents an in-memory file.
 type File struct {
@@ -138,7 +172,7 @@ func (fs FS) Mkdir(name string, perm os.FileMode) error {
 }
 
 // MkdirAll creates new in-memory directory and all its parents, if needed.
-func (fs FS) MkdirAll(name string, _ os.FileMode) error {
+func (fs FS) MkdirAll(name string, perm os.FileMode) error {
 	var (
 		dir = fs.Tree
 		err error
@@ -146,7 +180,7 @@ func (fs FS) MkdirAll(name string, _ os.FileMode) error {
 	fn := func(s string) bool {
 		v, ok := dir[s]
 		if !ok {
-			d := Directory{}
+			d := Directory{"": Property{Mode: perm}}
 			dir[s], dir = d, d
 		} else if dir, ok = v.(Directory); !ok {
 			err = &os.PathError{"MkdirAll", name, errNotDir}
@@ -207,6 +241,39 @@ func (fs FS) Stat(name string) (os.FileInfo, error) {
 		return nil, err
 	}
 	return f.Stat()
+}
+
+// Walk walks the file tree in a depth-first lexical order, calling fn for each
+// file or directory.
+func (fs FS) Walk(root string, fn filepath.WalkFunc) (err error) {
+	dir, perr := fs.lookup(root)
+	if perr != nil {
+		fn(root, nil, err)
+		return perr
+	}
+	if err = fn(root, fileinfo{readproperty(dir), root, 0, true}, nil); err != nil {
+		return
+	}
+	ifn := func(s string, v interface{}, _ []dirQueue) bool {
+		s = filepath.Join(root, s)
+		var fi = fileinfo{
+			p: readproperty(v),
+			s: s,
+		}
+		switch v := v.(type) {
+		case File:
+			fi.n, fi.d = int64(len(v.Content)), false
+		case Directory:
+			fi.n, fi.d = 0, true
+		default:
+			panic(errCorrupted)
+		}
+		// TODO(rjeczalik): support filepath.SkipDir
+		err = fn(s, fi, nil)
+		return err == nil
+	}
+	dfs(dir, ifn)
+	return
 }
 
 func (fs FS) dirwalk(p string, fn func(string) bool) {

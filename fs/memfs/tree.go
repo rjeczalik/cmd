@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"unicode"
 )
 
@@ -51,29 +50,54 @@ func (fs FS) String() string {
 	if dirlen(fs.Tree) == 0 {
 		return ".\n"
 	}
-	type DirQueue struct {
-		Dir   Directory
-		Queue []string
-	}
-	NewDirQueue := func(dir Directory) (dq DirQueue) {
-		dq.Dir, dq.Queue = dir, make([]string, 0, dirlen(dir))
-		for k := range dir {
-			// Ignore special empty key.
-			if k == "" {
-				continue
-			}
-			dq.Queue = append(dq.Queue, k)
-		}
-		sort.Sort(sort.Reverse(sort.StringSlice(dq.Queue)))
-		return
-	}
-	var (
-		buf  = bytes.NewBuffer(make([]byte, 0, 128))
-		glob = []DirQueue{NewDirQueue(fs.Tree)}
-	)
+	var buf = bytes.NewBuffer(make([]byte, 0, 128))
 	// TOOD(rjeczalik): fold long root path
 	buf.WriteByte('.')
 	buf.WriteByte('\n')
+	fn := func(s string, v interface{}, glob []dirQueue) bool {
+		var dq = &glob[len(glob)-1]
+		for i := 0; i < len(glob)-1; i++ {
+			if len(glob[i].Queue) != 0 {
+				buf.Write(boxDepth)
+			} else {
+				buf.Write(boxDepthLast)
+			}
+		}
+		if len(dq.Queue) != 0 {
+			buf.Write(boxItem)
+		} else {
+			buf.Write(boxItemLast)
+		}
+		buf.WriteString(filepath.Base(s))
+		if dir, ok := v.(Directory); ok && dirlen(dir) == 0 {
+			buf.WriteByte('/')
+		}
+		buf.WriteByte('\n')
+		return true
+	}
+	dfs(fs.Tree, fn)
+	return buf.String()
+}
+
+type dirQueue struct {
+	Name  string
+	Dir   Directory
+	Queue []string
+}
+
+func newDirQueue(name string, dir Directory) dirQueue {
+	return dirQueue{
+		Name:  name,
+		Dir:   dir,
+		Queue: dir.Ls(OrderLexicalDesc),
+	}
+}
+
+func dfs(d Directory, fn func(name string, item interface{}, state []dirQueue) bool) {
+	if dirlen(d) == 0 {
+		return
+	}
+	var glob = []dirQueue{newDirQueue("", d)}
 	for len(glob) > 0 {
 		var (
 			s  string
@@ -83,30 +107,17 @@ func (fs FS) String() string {
 			glob = glob[:len(glob)-1]
 			continue
 		}
-		for i := 0; i < len(glob)-1; i++ {
-			if len(glob[i].Queue) != 0 {
-				buf.Write(boxDepth)
-			} else {
-				buf.Write(boxDepthLast)
-			}
-		}
 		s, dq.Queue = dq.Queue[len(dq.Queue)-1], dq.Queue[:len(dq.Queue)-1]
-		if len(dq.Queue) != 0 {
-			buf.Write(boxItem)
-		} else {
-			buf.Write(boxItemLast)
+		name := filepath.Join(dq.Name, s)
+		if !fn(name, dq.Dir[s], glob) {
+			return
 		}
-		buf.WriteString(s)
 		if dir, ok := dq.Dir[s].(Directory); ok {
 			if dirlen(dir) > 0 {
-				glob = append(glob, NewDirQueue(dir))
-			} else {
-				buf.WriteByte('/')
+				glob = append(glob, newDirQueue(name, dir))
 			}
 		}
-		buf.WriteByte('\n')
 	}
-	return buf.String()
 }
 
 func max(i, j int) int {
