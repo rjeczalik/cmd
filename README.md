@@ -38,6 +38,8 @@ github.com
                 └── util_test.go
 ```
 
+**NOTE** `fs.Filesystem` does not support symlinks yet ([#3](https://github.com/rjeczalik/tools/issues/3)), that's why `gotree` will print any symlink as regular file or directory. Moreover it won't follow nor resolve any of them.
+
 ## fs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs)
 
 Package fs provides an interface for the filesystem-related functions from the `os` package.
