@@ -12,14 +12,31 @@
 //   	gotree [OPTION]... [DIRECTORY]
 //
 //   OPTIONS:
-//   	-a			All files are listed
-//   	-d			List directories only
-//   	-L level	Descend only <level> directories deep
+//   	-a          All files are listed (NOT IMPLEMENTED)
+//   	-d          List directories only (NOT IMPLEMENTED)
+//   	-L level    Descend only <level> directories deep
 //
 // Example
 //
-//   ~ $ gotree -L 1 src/github.com/rjeczalik/tools
+//   ~/src $ gotree -L 1 github.com/rjeczalik/tools
+//   github.com
+//   └── rjeczalik
+//       └── tools
+//           ├── .git/
+//           ├── .gitignore
+//           ├── .travis.yml
+//           ├── LICENSE
+//           ├── README.md
+//           ├── cmd/
+//           ├── doc.go
+//           ├── fs/
+//           └── netz/
+//
+//   7 directories, 5 files
+//
 // TODO
+//
+// * do not list hidden files (currently gotree has -a set by default)
 package main
 
 import (
@@ -90,7 +107,7 @@ func main() {
 		}
 		return func(s string) bool {
 			return strings.Count(s[strings.Index(s, path)+len(path):],
-				string(os.PathSeparator)) <= lvl
+				string(os.PathSeparator)) < lvl
 		}
 	}(path)
 	for len(glob) > 0 {
@@ -112,5 +129,14 @@ func main() {
 		}
 		f.Close()
 	}
-	fmt.Println(spy)
+	var ndir, nfile int
+	spy.Walk(".", func(_ string, fi os.FileInfo, _ error) (err error) {
+		if fi.IsDir() {
+			ndir++
+		} else {
+			nfile++
+		}
+		return
+	})
+	fmt.Printf("%s\n%d directories, %d files\n", spy, ndir, nfile)
 }

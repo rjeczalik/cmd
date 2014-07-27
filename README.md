@@ -18,7 +18,7 @@ Command `gotree` is Go implementation of the Unix `tree` command.
 *Usage*
 
 ```bash
-~ $ gotree github.com/rjeczalik/tools
+~/src $ gotree github.com/rjeczalik/tools/fs
 github.com
 └── rjeczalik
     └── tools
@@ -36,6 +36,8 @@ github.com
                 ├── tree_test.go
                 ├── util.go
                 └── util_test.go
+
+6 directories, 11 files
 ```
 
 **NOTE** `fs.Filesystem` does not support symlinks yet ([#3](https://github.com/rjeczalik/tools/issues/3)), that's why `gotree` will print any symlink as regular file or directory. Moreover it won't follow nor resolve any of them.

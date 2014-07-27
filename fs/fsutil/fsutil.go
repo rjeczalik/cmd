@@ -14,7 +14,7 @@ func Readdirnames(dir string) []string {
 }
 
 // Intersect returns a collection of paths which are the longest intersection
-// between two directory tries - those tries have roots in 'src' and 'dir' directories.
+// between two directory trees - those trees have roots in 'src' and 'dir' directories.
 // It does not glob into directories, which names begin with a dot.
 //
 // Example
@@ -82,7 +82,7 @@ func (g Glob) Readdirnames(dir string) []string {
 }
 
 // Intersect returns a collection of paths which are the longest intersection
-// between two directory tries - those tries have roots in 'src' and 'dir' directories.
+// between two directory trees - those trees have roots in 'src' and 'dir' directories.
 func (g Glob) Intersect(src, dir string) []string {
 	glob, dirs, pop := []string{""}, map[string]struct{}{"": {}}, ""
 	for len(glob) > 0 {
