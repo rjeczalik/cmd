@@ -93,7 +93,7 @@ func TestCompare(t *testing.T) {
 		false,
 	}}
 	for i, cas := range cases {
-		if Compare(cas.lhs, cas.rhs) != cas.ok {
+		if Equal(cas.lhs, cas.rhs) != cas.ok {
 			t.Errorf("want Compare(...)=%v; got %v (i=%d)", cas.ok, !cas.ok, i)
 		}
 	}

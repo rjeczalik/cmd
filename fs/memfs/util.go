@@ -8,10 +8,10 @@ func dirlen(d Directory) (n int) {
 	return
 }
 
-// Compare returns true when the structure of the lhs and rhs is the same.
+// Equal returns true when the structure of the lhs and rhs is the same.
 // It does not compare the value of the Files between the trees. If both trees
 // are empty it returns true.
-func Compare(lhs, rhs FS) bool {
+func Equal(lhs, rhs FS) bool {
 	type node struct{ lhs, rhs Directory }
 	var (
 		glob = []node{{lhs: lhs.Tree, rhs: rhs.Tree}}

@@ -252,7 +252,7 @@ func TestString(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(fs, cas) {
+		if !Equal(fs, cas) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
@@ -265,7 +265,7 @@ func TestUnixTree(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(fs, cases[i]) {
+		if !Equal(fs, cases[i]) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
@@ -278,7 +278,7 @@ func TestTabTree(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(fs, cases[i]) {
+		if !Equal(fs, cases[i]) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}

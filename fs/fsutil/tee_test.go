@@ -65,7 +65,7 @@ LOOP:
 				continue LOOP
 			}
 		}
-		if !memfs.Compare(spy, memfs.Must(memfs.TabTree(cas.fs))) {
+		if !memfs.Equal(spy, memfs.Must(memfs.TabTree(cas.fs))) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}

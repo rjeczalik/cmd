@@ -135,7 +135,7 @@ func TestMkdirNop(t *testing.T) {
 				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
 				continue
 			}
-			if !Compare(Must(mutfs.Cd(dir)), Must(fs.Cd(dir))) {
+			if !Equal(Must(mutfs.Cd(dir)), Must(fs.Cd(dir))) {
 				t.Errorf("want Compare(...)=true; got false (i=%d, j=%d)", i, j)
 			}
 		}
@@ -353,7 +353,7 @@ func TestCd(t *testing.T) {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Compare(lhs, rhs) {
+		if !Equal(lhs, rhs) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
