@@ -1,6 +1,43 @@
 tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools)
 =====
 
+## cmd/gotree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree)
+
+Command `gotree` is Go implementation of the Unix `tree` command.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/cmd/gotree
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/cmd/gotree](http://godoc.org/github.com/rjeczalik/tools/cmd/gotree)
+
+*Usage*
+
+```bash
+~ $ gotree github.com/rjeczalik/tools
+github.com
+└── rjeczalik
+    └── tools
+        └── fs
+            ├── fs.go
+            ├── fsutil
+            │   ├── fsutil.go
+            │   ├── fsutil_test.go
+            │   ├── tee.go
+            │   └── tee_test.go
+            └── memfs
+                ├── memfs.go
+                ├── memfs_test.go
+                ├── tree.go
+                ├── tree_test.go
+                ├── util.go
+                └── util_test.go
+```
+
 ## fs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs)
 
 Package fs provides an interface for the filesystem-related functions from the `os` package.
