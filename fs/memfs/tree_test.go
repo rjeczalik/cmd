@@ -1,6 +1,9 @@
 package memfs
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 var cases = [...]FS{{
 	Tree: Directory{
@@ -240,6 +243,19 @@ w
 			z
 				1.txt
 		y.txt`),
+}
+
+func TestString(t *testing.T) {
+	for i, cas := range cases {
+		fs, err := Unix.Tree(strings.NewReader(cas.String()))
+		if err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !Compare(fs, cas) {
+			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
+		}
+	}
 }
 
 func TestUnixTree(t *testing.T) {

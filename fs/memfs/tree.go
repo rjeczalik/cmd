@@ -8,8 +8,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"unicode"
 )
+
+// TODO(rjeczalik): FS.String -> CustomPrinter type
 
 // Box drawings symbols - http://unicode-table.com/en/sections/box-drawing/.
 var (
@@ -18,8 +21,93 @@ var (
 	boxVertical      = []byte("│")
 	boxUpRight       = []byte("└")
 	boxSpace         = []byte{'\u0020'}
-	boxHardSpace     = []byte{'\u00A0'}
+	boxHardSpace     = []byte{'\u00a0'}
 )
+
+var (
+	boxDepth     = []byte("│\u00a0\u00a0\u0020")
+	boxDepthLast = []byte("\u0020\u0020\u0020\u0020")
+	boxItem      = []byte("├──\u0020")
+	boxItemLast  = []byte("└──\u0020")
+)
+
+// String produces Unix-tree-like filesystem representation as a string.
+//
+// Example
+//
+// String can be use to convert between Tab and Unix tree representations, like
+// in the following example:
+//
+//   var fs = memfs.Must(memfs.TabTree([]byte(".\ndir\n\tfile1.txt\n\tfile2.txt")))
+//   fmt.Println(fs)
+//
+// Which prints:
+//
+//   .
+//   └── dir
+//       ├── file1.txt
+//       └── file2.txt
+func (fs FS) String() string {
+	if dirlen(fs.Tree) == 0 {
+		return ".\n"
+	}
+	type DirQueue struct {
+		Dir   Directory
+		Queue []string
+	}
+	NewDirQueue := func(dir Directory) (dq DirQueue) {
+		dq.Dir, dq.Queue = dir, make([]string, 0, dirlen(dir))
+		for k := range dir {
+			// Ignore special empty key.
+			if k == "" {
+				continue
+			}
+			dq.Queue = append(dq.Queue, k)
+		}
+		sort.Sort(sort.Reverse(sort.StringSlice(dq.Queue)))
+		return
+	}
+	var (
+		buf  = bytes.NewBuffer(make([]byte, 0, 128))
+		glob = []DirQueue{NewDirQueue(fs.Tree)}
+	)
+	// TOOD(rjeczalik): fold long root path
+	buf.WriteByte('.')
+	buf.WriteByte('\n')
+	for len(glob) > 0 {
+		var (
+			s  string
+			dq = &glob[len(glob)-1]
+		)
+		if len(dq.Queue) == 0 {
+			glob = glob[:len(glob)-1]
+			continue
+		}
+		for i := 0; i < len(glob)-1; i++ {
+			if len(glob[i].Queue) != 0 {
+				buf.Write(boxDepth)
+			} else {
+				buf.Write(boxDepthLast)
+			}
+		}
+		s, dq.Queue = dq.Queue[len(dq.Queue)-1], dq.Queue[:len(dq.Queue)-1]
+		if len(dq.Queue) != 0 {
+			buf.Write(boxItem)
+		} else {
+			buf.Write(boxItemLast)
+		}
+		buf.WriteString(s)
+		if dir, ok := dq.Dir[s].(Directory); ok {
+			if dirlen(dir) > 0 {
+				glob = append(glob, NewDirQueue(dir))
+			} else {
+				buf.WriteByte('/')
+			}
+		}
+		buf.WriteByte('\n')
+	}
+	return buf.String()
+}
 
 func max(i, j int) int {
 	if i > j {

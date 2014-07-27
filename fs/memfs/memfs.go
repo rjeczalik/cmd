@@ -55,6 +55,12 @@ func readproperty(v interface{}) Property {
 	panic(errCorrupted)
 }
 
+var (
+	errDir       = errors.New("is a directory")
+	errNotDir    = errors.New("not a directory")
+	errCorrupted = errors.New("tree is corrupted")
+)
+
 // Directory represents an in-memory directory. Valid directory has each value
 // of a File or Directory type, where a key of such value must be non-empty
 // and contain no backward nor forward slashes. An empty key has a special
@@ -74,20 +80,14 @@ type FS struct {
 	Tree Directory
 }
 
+var _ fs.Filesystem = (*FS)(nil)
+
 // New returns an empty filesystem.
 func New() FS {
 	return FS{
 		Tree: Directory{},
 	}
 }
-
-var _ fs.Filesystem = FS{}
-
-var (
-	errDir       = errors.New("is a directory")
-	errNotDir    = errors.New("not a directory")
-	errCorrupted = errors.New("tree is corrupted")
-)
 
 // Cd gives new filesystem with a root starting at the path of the old filesystem.
 func (fs FS) Cd(path string) (FS, error) {
