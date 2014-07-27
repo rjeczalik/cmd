@@ -1,4 +1,4 @@
-tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools)
+tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools)[![Build status](https://ci.appveyor.com/api/projects/status/2p6hms7nuantflwb)](https://ci.appveyor.com/project/rjeczalik/tools-161)
 =====
 
 ## cmd/gotree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree)
