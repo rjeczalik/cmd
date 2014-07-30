@@ -1,4 +1,4 @@
-tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools)[![Build status](https://ci.appveyor.com/api/projects/status/2p6hms7nuantflwb)](https://ci.appveyor.com/project/rjeczalik/tools-161)
+tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools "linux_amd64") [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=osx)](https://travis-ci.org/rjeczalik/tools "darwin_amd64") [![Build status](https://ci.appveyor.com/api/projects/status/2p6hms7nuantflwb)](https://ci.appveyor.com/project/rjeczalik/tools-161 "windows_amd64")
 =====
 
 ## cmd/gotree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/gotree)
