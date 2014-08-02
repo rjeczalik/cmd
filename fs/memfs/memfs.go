@@ -140,11 +140,11 @@ func (fs FS) Create(name string) (fs.File, error) {
 		return nil, perr
 	}
 	if base == "" {
-		return nil, &os.PathError{"Create", name, errDir}
+		return nil, &os.PathError{Op: "Create", Path: name, Err: errDir}
 	}
 	if v, ok := dir[base]; ok {
 		if _, ok = v.(Directory); ok {
-			return nil, &os.PathError{"Create", name, errDir}
+			return nil, &os.PathError{Op: "Create", Path: name, Err: errDir}
 		}
 	}
 	dir[base] = File{}
@@ -165,7 +165,7 @@ func (fs FS) Mkdir(name string, perm os.FileMode) error {
 		if _, ok = v.(Directory); ok {
 			return nil
 		}
-		return &os.PathError{"Mkdir", name, errNotDir}
+		return &os.PathError{Op: "Mkdir", Path: name, Err: errNotDir}
 	}
 	dir[base] = Directory{"": Property{Mode: perm}}
 	return nil
@@ -183,7 +183,7 @@ func (fs FS) MkdirAll(name string, perm os.FileMode) error {
 			d := Directory{"": Property{Mode: perm}}
 			dir[s], dir = d, d
 		} else if dir, ok = v.(Directory); !ok {
-			err = &os.PathError{"MkdirAll", name, errNotDir}
+			err = &os.PathError{Op: "MkdirAll", Path: name, Err: errNotDir}
 			return false
 		}
 		return true
@@ -203,7 +203,7 @@ func (fs FS) Open(name string) (fs.File, error) {
 		return directory{s: name, d: dir}, nil
 	}
 	if _, ok := dir[base]; !ok {
-		return nil, &os.PathError{"Open", name, os.ErrNotExist}
+		return nil, &os.PathError{Op: "Open", Path: name, Err: os.ErrNotExist}
 	}
 	switch v := dir[base].(type) {
 	case File:
@@ -211,7 +211,7 @@ func (fs FS) Open(name string) (fs.File, error) {
 	case Directory:
 		return directory{s: name, d: v}, nil
 	}
-	return nil, &os.PathError{"Open", name, errCorrupted}
+	return nil, &os.PathError{Op: "Open", Path: name, Err: errCorrupted}
 }
 
 // Remove removes a file from the tree given by the path.
@@ -222,13 +222,13 @@ func (fs FS) Remove(name string) error {
 		return perr
 	}
 	if base == "" {
-		return &os.PathError{"Remove", name, os.ErrPermission}
+		return &os.PathError{Op: "Remove", Path: name, Err: os.ErrPermission}
 	}
 	if _, ok := dir[base]; !ok {
-		return &os.PathError{"Remove", name, os.ErrNotExist}
+		return &os.PathError{Op: "Remove", Path: name, Err: os.ErrNotExist}
 	}
 	if _, ok := dir[base].(Directory); ok {
-		return &os.PathError{"Remove", name, os.ErrPermission}
+		return &os.PathError{Op: "Remove", Path: name, Err: os.ErrPermission}
 	}
 	delete(dir, base)
 	return nil
@@ -360,7 +360,7 @@ func (f file) Read(p []byte) (int, error) {
 }
 
 func (f file) Readdir(int) ([]os.FileInfo, error) {
-	return nil, &os.PathError{"Readdir", f.s, nil}
+	return nil, &os.PathError{Op: "Readdir", Path: f.s, Err: nil}
 }
 
 func (f file) Seek(offset int64, whence int) (int64, error) {
@@ -388,7 +388,7 @@ func (d directory) Close() (err error) {
 }
 
 func (d directory) Read(p []byte) (int, error) {
-	return 0, &os.PathError{"Read", d.s, nil}
+	return 0, &os.PathError{Op: "Read", Path: d.s, Err: nil}
 }
 
 // TODO(rjeczalik): make it ordered so it actually works
@@ -425,7 +425,7 @@ func (d directory) Readdir(n int) (fi []os.FileInfo, err error) {
 }
 
 func (d directory) Seek(int64, int) (int64, error) {
-	return 0, &os.PathError{"Seek", d.s, nil}
+	return 0, &os.PathError{Op: "Seek", Path: d.s, Err: nil}
 }
 
 func (d directory) Stat() (os.FileInfo, error) {
@@ -433,7 +433,7 @@ func (d directory) Stat() (os.FileInfo, error) {
 }
 
 func (d directory) Write([]byte) (int, error) {
-	return 0, &os.PathError{"Write", d.s, nil}
+	return 0, &os.PathError{Op: "Write", Path: d.s, Err: nil}
 }
 
 type fileinfo struct {
