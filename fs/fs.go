@@ -89,3 +89,38 @@ func (FS) Walk(root string, fn filepath.WalkFunc) error {
 // Default is the default implementation of Filesystem, which wraps functions
 // from the os package.
 var Default Filesystem = FS{}
+
+// Create wraps Default.Create.
+func Create(name string) (File, error) {
+	return Default.Create(name)
+}
+
+// Mkdir wraps Default.Mkdir.
+func Mkdir(name string, perm os.FileMode) error {
+	return Default.Mkdir(name, perm)
+}
+
+// Mkdir wraps Default.MkdirAll.
+func MkdirAll(name string, perm os.FileMode) error {
+	return Default.MkdirAll(name, perm)
+}
+
+// Open wraps Default.Open.
+func Open(name string) (File, error) {
+	return Default.Open(name)
+}
+
+// Remove wraps Default.Remove.
+func Remove(name string) error {
+	return Default.Remove(name)
+}
+
+// Stat wraps Default.Stat.
+func Stat(name string) (os.FileInfo, error) {
+	return Default.Stat(name)
+}
+
+// Walk wraps Default.Walk.
+func Walk(root string, fn filepath.WalkFunc) error {
+	return Default.Walk(root, fn)
+}
