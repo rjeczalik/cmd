@@ -19,23 +19,20 @@ Command `gotree` is Go implementation of the Unix `tree` command.
 
 ```bash
 ~/src $ gotree github.com/rjeczalik/tools/fs
-github.com
-└── rjeczalik
-    └── tools
-        └── fs
-            ├── fs.go
-            ├── fsutil
-            │   ├── fsutil.go
-            │   ├── fsutil_test.go
-            │   ├── tee.go
-            │   └── tee_test.go
-            └── memfs
-                ├── memfs.go
-                ├── memfs_test.go
-                ├── tree.go
-                ├── tree_test.go
-                ├── util.go
-                └── util_test.go
+github.com/rjeczalik/tools/fs/.
+├── fs.go
+├── fsutil
+│   ├── fsutil.go
+│   ├── fsutil_test.go
+│   ├── tee.go
+│   └── tee_test.go
+└── memfs
+    ├── memfs.go
+    ├── memfs_test.go
+    ├── tree.go
+    ├── tree_test.go
+    ├── util.go
+    └── util_test.go
 
 6 directories, 11 files
 ```
@@ -66,8 +63,8 @@ Command mktree creates a file tree out of `tree` output read from standard input
 └── file.txt
 
 1 directory, 2 files
-~ $ tree | mktree -o /tmp/mktree
-~ $ tree /tmp/mktree
+~ $ gotree | mktree -o /tmp/mktree
+~ $ gotree /tmp/mktree
 /tmp/mktree
 ├── dir
 │   └── file.txt

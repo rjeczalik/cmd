@@ -20,7 +20,7 @@
 // The following example mirrors file tree of tools/fs package under /tmp/mktree
 // directory.
 //
-//   src/github.com/rjeczalik/tools/fs $ tree
+//   src/github.com/rjeczalik/tools/fs $ gotree
 //   .
 //   ├── fs.go
 //   ├── fsutil
@@ -37,9 +37,9 @@
 //       └── util_test.go
 //
 //   2 directories, 11 files
-//   src/github.com/rjeczalik/tools/fs $ tree | mktree -o /tmp/mktree
-//   src/github.com/rjeczalik/tools/fs $ tree /tmp/mktree
-//   /tmp/mktree
+//   src/github.com/rjeczalik/tools/fs $ gotree | mktree -o /tmp/mktree
+//   src/github.com/rjeczalik/tools/fs $ gotree /tmp/mktree
+//   /tmp/mktree/.
 //   ├── fs.go
 //   ├── fsutil
 //   │   ├── fsutil.go
