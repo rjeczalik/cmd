@@ -89,27 +89,31 @@ func main() {
 		fmt.Println(usage)
 		return
 	}
-	var path = "."
+	var (
+		path string
+		root string
+	)
 	if len(flag.Args()) > 1 {
 		die(usage)
 	}
 	if len(flag.Args()) == 1 {
-		path = flag.Args()[0]
+		root = filepath.Clean(flag.Args()[0])
+	} else {
+		root, _ = os.Getwd()
 	}
+	path = root
 	var (
 		glob = []string{path}
 		spy  = memfs.New()
 		fs   = fsutil.TeeFilesystem(fs.FS{}, spy)
 	)
-	islvlok := func(path string) func(s string) bool {
+	islvlok := func(s string) bool {
 		if lvl == 0 {
-			return func(string) bool { return true }
+			return true
 		}
-		return func(s string) bool {
-			return strings.Count(s[strings.Index(s, path)+len(path):],
-				string(os.PathSeparator)) < lvl
-		}
-	}(path)
+		return strings.Count(s[strings.Index(s, root)+len(root):],
+			string(os.PathSeparator)) < lvl
+	}
 	for len(glob) > 0 {
 		path, glob = glob[len(glob)-1], glob[:len(glob)-1]
 		f, err := fs.Open(path)
@@ -130,7 +134,7 @@ func main() {
 		f.Close()
 	}
 	var ndir, nfile int
-	spy.Walk(".", func(_ string, fi os.FileInfo, _ error) (err error) {
+	spy.Walk(string(os.PathSeparator), func(_ string, fi os.FileInfo, _ error) (err error) {
 		if fi.IsDir() {
 			ndir++
 		} else {
@@ -138,5 +142,10 @@ func main() {
 		}
 		return
 	})
-	fmt.Printf("%s\n%d directories, %d files\n", spy, ndir, nfile)
+	spy, err := spy.Cd(root)
+	if err != nil {
+		// TODO(rjeczalik): improve error message
+		die(err)
+	}
+	fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir, nfile)
 }
