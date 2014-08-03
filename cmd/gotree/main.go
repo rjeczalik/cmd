@@ -1,4 +1,4 @@
-// cmd/gotree is a reimplmentation of the Unix tree command in Go.
+// Command gotree is a reimplmentation of the Unix tree command in Go.
 //
 // It is not going to be a feature-complete drop-in replacement for the tree
 // command, but rather a showcase of fs/memfs and fs/fsutil packages.

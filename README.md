@@ -42,6 +42,40 @@ github.com
 
 **NOTE** `fs.Filesystem` does not support symlinks yet ([#3](https://github.com/rjeczalik/tools/issues/3)), that's why `gotree` will print any symlink as regular file or directory. Moreover it won't follow nor resolve any of them.
 
+## cmd/mktree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree)
+
+Command mktree creates a file tree out of `tree` output read from standard input.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/cmd/mktree
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/cmd/mktree](http://godoc.org/github.com/rjeczalik/tools/cmd/mktree)
+
+*Usage*
+
+```bash
+~ $ tree
+.
+├── dir
+│   └── file.txt
+└── file.txt
+
+1 directory, 2 files
+~ $ tree | mktree -o /tmp/mktree
+~ $ tree /tmp/mktree
+/tmp/mktree
+├── dir
+│   └── file.txt
+└── file.txt
+
+1 directory, 2 files
+```
+
 ## fs [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/fs?status.png)](https://godoc.org/github.com/rjeczalik/tools/fs)
 
 Package fs provides an interface for the filesystem-related functions from the `os` package.
