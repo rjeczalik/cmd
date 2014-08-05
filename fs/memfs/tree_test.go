@@ -1,124 +1,130 @@
 package memfs
 
 import (
+	"bytes"
+	"io"
 	"strings"
 	"testing"
 )
 
-var cases = [...]FS{{
-	Tree: Directory{
-		"dir": Directory{
-			"file.txt": File{},
-		},
-	},
-}, {
-	Tree: Directory{
-		"out":         Directory{},
-		"out.gif":     File{},
-		"out.ogv":     File{},
-		"output2.gif": File{},
-		"output3.gif": File{},
-		"output.gif":  File{},
-	},
-}, {
-	Tree: Directory{
-		"github.com": Directory{
-			"rjeczalik": Directory{
-				"tools": Directory{
-					"doc.go": File{},
-					"fs": Directory{
-						"fs.go": File{},
-						"glob": Directory{
-							"glob.go":      File{},
-							"glob_test.go": File{},
-						},
-						"memfs": Directory{
-							"memfs.go":      File{},
-							"memfs_test.go": File{},
-							"tree.go":       File{},
-							"tree_test.go":  File{},
-							"util.go":       File{},
-							"util_test.go":  File{},
-						},
-						"testdata": Directory{
-							"test":     Directory{},
-							"tree.txt": File{},
-						},
-					},
-					"LICENSE": File{},
-					"netz": Directory{
-						"memnetz": Directory{
-							"memnetz.go":      File{},
-							"memnetz_test.go": File{},
-						},
-						"netz.go":       File{},
-						"split.go":      File{},
-						"split_test.go": File{},
-					},
-					"README.md": File{},
-					"tmp":       Directory{},
-				},
+var cases = [...]FS{
+	0: {
+		Tree: Directory{
+			"dir": Directory{
+				"file.txt": File{},
 			},
 		},
 	},
-}, {
-	Tree: Directory{
-		"a": Directory{
-			"b1": Directory{
-				"c1": Directory{
-					"c1.txt": File{},
-				},
-				"c2": Directory{
-					"c2.txt": File{},
-				},
-				"c3": Directory{
-					"c3.txt": File{},
-					"d1": Directory{
-						"e1": Directory{
-							"_": Directory{
-								"_.txt": File{},
+	1: {
+		Tree: Directory{
+			"out":         Directory{},
+			"out.gif":     File{},
+			"out.ogv":     File{},
+			"output2.gif": File{},
+			"output3.gif": File{},
+			"output.gif":  File{},
+		},
+	},
+	2: {
+		Tree: Directory{
+			"github.com": Directory{
+				"rjeczalik": Directory{
+					"tools": Directory{
+						"doc.go": File{},
+						"fs": Directory{
+							"fs.go": File{},
+							"glob": Directory{
+								"glob.go":      File{},
+								"glob_test.go": File{},
 							},
-							"e1.txt": File{},
-							"e2.txt": File{},
-							"e":      Directory{},
+							"memfs": Directory{
+								"memfs.go":      File{},
+								"memfs_test.go": File{},
+								"tree.go":       File{},
+								"tree_test.go":  File{},
+								"util.go":       File{},
+								"util_test.go":  File{},
+							},
+							"testdata": Directory{
+								"test":     Directory{},
+								"tree.txt": File{},
+							},
 						},
+						"LICENSE": File{},
+						"netz": Directory{
+							"memnetz": Directory{
+								"memnetz.go":      File{},
+								"memnetz_test.go": File{},
+							},
+							"netz.go":       File{},
+							"split.go":      File{},
+							"split_test.go": File{},
+						},
+						"README.md": File{},
+						"tmp":       Directory{},
 					},
 				},
-			},
-			"b2": Directory{
-				"c1": Directory{
-					"d1.txt": File{},
-					"d2":     Directory{},
-					"d3.txt": File{},
-				},
-			},
-		},
-		"a.txt": File{},
-		"w": Directory{
-			"w.txt": File{},
-			"x": Directory{
-				"y": Directory{
-					"z": Directory{
-						"1.txt": File{},
-					},
-				},
-				"y.txt": File{},
 			},
 		},
 	},
-},
+	3: {
+		Tree: Directory{
+			"a": Directory{
+				"b1": Directory{
+					"c1": Directory{
+						"c1.txt": File{},
+					},
+					"c2": Directory{
+						"c2.txt": File{},
+					},
+					"c3": Directory{
+						"c3.txt": File{},
+						"d1": Directory{
+							"e1": Directory{
+								"_": Directory{
+									"_.txt": File{},
+								},
+								"e1.txt": File{},
+								"e2.txt": File{},
+								"e":      Directory{},
+							},
+						},
+					},
+				},
+				"b2": Directory{
+					"c1": Directory{
+						"d1.txt": File{},
+						"d2":     Directory{},
+						"d3.txt": File{},
+					},
+				},
+			},
+			"a.txt": File{},
+			"w": Directory{
+				"w.txt": File{},
+				"x": Directory{
+					"y": Directory{
+						"z": Directory{
+							"1.txt": File{},
+						},
+					},
+					"y.txt": File{},
+				},
+			},
+		},
+	},
 }
 
 var unix = [...][]byte{
-	[]byte(".\n└── dir\n    ├── file.txt"),
-	[]byte(`.
+	0: []byte(".\n└── dir\n    ├── file.txt"),
+	1: []byte(`.
 ├── out/
 ├── out.gif
 ├── out.ogv
 ├── output2.gif
 ├── output3.gif
 └── output.gif`),
-	[]byte(`/github.com/rjeczalik/tools
+	2: []byte(`/github.com/rjeczalik/tools
 ├── doc.go
 ├── fs
 │   ├── fs.go
@@ -145,7 +151,7 @@ var unix = [...][]byte{
 │   └── split_test.go
 ├── README.md
 └── tmp/`),
-	[]byte(`.
+	3: []byte(`.
 ├── a
 │   ├── b1
 │   │   ├── c1
@@ -179,15 +185,15 @@ var unix = [...][]byte{
 }
 
 var tab = [...][]byte{
-	[]byte(".\ndir\n\tfile.txt"),
-	[]byte(`.
+	0: []byte(".\ndir\n\tfile.txt"),
+	1: []byte(`.
 out/
 out.gif
 out.ogv
 output2.gif
 output3.gif
 output.gif`),
-	[]byte(`/github.com/rjeczalik/tools
+	2: []byte(`/github.com/rjeczalik/tools
 doc.go
 fs
 	fs.go
@@ -214,7 +220,7 @@ netz
 	split_test.go
 README.md
 tmp/`),
-	[]byte(`.
+	3: []byte(`.
 a
 	b1
 		c1
@@ -280,6 +286,53 @@ func TestTabTree(t *testing.T) {
 		}
 		if !Equal(fs, cases[i]) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
+		}
+	}
+}
+
+func TestCustomTreeErr(t *testing.T) {
+	cases := [...][]struct {
+		depth int
+		name  string
+		err   error
+	}{
+		0: {
+			{0, "a", nil},
+			{1, "b", nil},
+			{1, "", nil},
+			{0, "d", nil},
+		},
+		1: {
+			{0, "a", nil},
+			{0, "b", nil},
+			{-1, "c", nil},
+			{0, "d", nil},
+		},
+		2: {
+			{0, "a", nil},
+			{1, "b", nil},
+			{2, "c", ErrCustomTree},
+			{3, "d", nil},
+		},
+	}
+
+	p := make([]byte, 8)
+	for i, cas := range cases {
+		j := 0
+		ct := CustomTree(func([]byte) (n int, p []byte, e error) {
+			n, p, e = cas[j].depth, []byte(cas[j].name), cas[j].err
+			if j < len(cas)-1 {
+				j++
+			}
+			return
+		})
+		buf := bytes.NewReader(tab[1])
+		if _, err := ct.Tree(buf); err == nil {
+			t.Errorf("want err to be non-nil (i=%d)", i)
+			continue
+		}
+		if _, err := buf.Read(p); err != io.EOF {
+			t.Errorf("want err=io.EOF; got %q (i=%d)", err, i)
 		}
 	}
 }

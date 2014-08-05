@@ -51,8 +51,8 @@ func Equal(lhs, rhs FS) bool {
 }
 
 // Fsck checks the fs Tree whether each node has proper type: either a File or
-// a Directory. Moreover it fails when directory contains an element with
-// an empty name. Fsking empty tree gives true.
+// a Directory. Moreover it fails if an empty key of a directory is defined and
+// is not of Property type. Fsking empty tree gives true.
 func Fsck(fs FS) bool {
 	var (
 		glob = []Directory{fs.Tree}

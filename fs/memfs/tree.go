@@ -3,6 +3,7 @@ package memfs
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -51,7 +52,7 @@ func (fs FS) String() string {
 		return ".\n"
 	}
 	var buf = bytes.NewBuffer(make([]byte, 0, 128))
-	// TOOD(rjeczalik): fold long root path
+	// TODO(rjeczalik): fold long root path
 	buf.WriteByte('.')
 	buf.WriteByte('\n')
 	fn := func(s string, v interface{}, glob []dirQueue) bool {
@@ -130,7 +131,10 @@ func max(i, j int) int {
 // CustomTree instructs tree builder how to parse single line of given buffer,
 // where 'name' is the name of a tree node, 'depth' is its depth in the tree
 // and 'err' eventual parsing failure. The 'line' is guaranteed to be non-nil
-// non-empty.
+// and non-empty.
+// The function is expected to return non-nil and non-empty name and non-negative
+// depth when err is nil. If the err is io.EOF, it will be translated to ErrCustomTree,
+// because it will.
 type CustomTree func(line []byte) (depth int, name []byte, err error)
 
 // Unix is a tree builder for the 'tree' Unix command.
@@ -165,10 +169,16 @@ func init() {
 	}
 }
 
+// ErrCustomTree represents a failure in handling returned values from a CustomTree
+// call.
+var ErrCustomTree = errors.New("invalid name and/or depth values")
+
 // Tree builds FS.Tree from given reader using CustomTree callback for parsing
-// node's name and its depth in the tree.
+// node's name and its depth in the tree. Tree returns ErrCustomTree error when
+// a call to ct gives invalid values.
 func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 	var (
+		e         error
 		dir       = Directory{}
 		buf       = bufio.NewReader(r)
 		glob      []Directory
@@ -191,21 +201,37 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 		if err = fs.MkdirAll(p, 0); err != nil {
 			return
 		}
-		// TODO(rjeczalik): make it an exported helper method
 		var perr *os.PathError
 		if dir, perr = fs.lookup(p); perr != nil {
 			err = perr
 			return
 		}
 	}
+	defer func() {
+		// This may happen when ct failed to provide non-empty file name,
+		// which left fs tree having a directory defined with a special key
+		// which is not of Property type.
+		if err == nil && !Fsck(fs) {
+			err = errCorrupted
+		}
+	}()
 	glob = append(glob, dir)
 	for {
 		line, err = buf.ReadBytes('\n')
 		if len(bytes.TrimSpace(line)) == 0 {
+			// Drain the buffer, needed for some use-cases (encoding, net/rpc)
 			io.Copy(ioutil.Discard, buf)
 			err, line = io.EOF, nil
 		} else {
-			depth, name, err = ct(bytes.TrimRightFunc(line, unicode.IsSpace))
+			depth, name, e = ct(bytes.TrimRightFunc(line, unicode.IsSpace))
+			if len(name) == 0 || depth < 0 || e != nil {
+				// Drain the buffer, needed for some use-cases (encoding, net/rpc)
+				io.Copy(ioutil.Discard, buf)
+				err, line = e, nil
+				if err == nil || err == io.EOF {
+					err = ErrCustomTree
+				}
+			}
 		}
 		// Skip first iteration.
 		if len(prevName) != 0 {
