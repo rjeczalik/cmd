@@ -62,12 +62,12 @@ var (
 	errCorrupted = errors.New("tree is corrupted")
 )
 
-// Order
+// Order denotes the access order pattern used by an external operation.
 type Order uint8
 
 const (
-	OrderLexicalAsc Order = iota
-	OrderLexicalDesc
+	OrderLexicalAsc  Order = iota // access items in ascending order
+	OrderLexicalDesc              // access items in descending order
 )
 
 // Directory represents an in-memory directory. Valid directory has each value
@@ -234,6 +234,24 @@ func (fs FS) Remove(name string) error {
 	return nil
 }
 
+// RemoveAll removes a file or a directory with all its descendants from the tree
+// rooted at the given path.
+func (fs FS) RemoveAll(name string) error {
+	dir, base, perr := fs.dirbase(name)
+	if perr != nil {
+		perr.Op = "RemoveAll"
+		return perr
+	}
+	if base == "" {
+		return &os.PathError{Op: "Remove", Path: name, Err: os.ErrPermission}
+	}
+	if _, ok := dir[base]; !ok {
+		return &os.PathError{Op: "Remove", Path: name, Err: os.ErrNotExist}
+	}
+	delete(dir, base)
+	return nil
+}
+
 // Stat gives the details of a file or a directory given by the path.
 func (fs FS) Stat(name string) (os.FileInfo, error) {
 	f, err := fs.Open(name)
@@ -315,6 +333,7 @@ func (fs FS) lookup(p string) (dir Directory, perr *os.PathError) {
 }
 
 func (fs FS) dirbase(p string) (Directory, string, *os.PathError) {
+	// TODO(rjeczalik): ignore trailing /
 	i := strings.LastIndex(p, sep)
 	if i == -1 {
 		return fs.Tree, "", nil

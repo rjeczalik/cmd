@@ -272,6 +272,82 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func (fs FS) Count() (ndir, nfile int) {
+	err := fs.Walk(string(os.PathSeparator), func(_ string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			ndir++
+		} else {
+			nfile++
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	// The '/' root directory does not count.
+	ndir -= 1
+	return
+}
+
+func TestRemoveAll(t *testing.T) {
+	cases := [...]struct {
+		path  string
+		ndir  int
+		nfile int
+	}{
+		0: {
+			"/a.txt",
+			16, 11,
+		},
+		1: {
+			"/w/w.txt",
+			16, 11,
+		},
+		2: {
+			"/a/b1/c3/d1/e1/_/_.txt",
+			16, 11,
+		},
+		3: {
+			// TODO(rjeczalik): fix fs.dirbase to ignore trailing /
+			"/a/b1/c3/d1/e1/_",
+			15, 11,
+		},
+		4: {
+			"/w",
+			12, 9,
+		},
+		5: {
+			"/a/b1/c3",
+			11, 8,
+		},
+		6: {
+			"/a",
+			4, 4,
+		},
+	}
+	for i, cas := range cases {
+		fs := Must(TabTree(large))
+		if err := fs.RemoveAll(cas.path); err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if _, err := fs.Open(cas.path); err == nil || !os.IsNotExist(err) {
+			t.Errorf("want err to indicate the path does not exist; got %q (i=%d)", err, i)
+			continue
+		}
+		ndir, nfile := fs.Count()
+		if ndir != cas.ndir {
+			t.Errorf("want ndir=%d; got %d (i=%d)", cas.ndir, ndir, i)
+		}
+		if nfile != cas.nfile {
+			t.Errorf("want nfile=%d; got %d (i=%d)", cas.nfile, nfile, i)
+		}
+	}
+}
+
 func TestReaddir(t *testing.T) {
 	fs := Must(TabTree(small))
 	cases := map[string][]struct {

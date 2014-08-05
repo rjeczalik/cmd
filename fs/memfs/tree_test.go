@@ -175,7 +175,7 @@ var unix = [...][]byte{
         │       └── 1.txt
         └── y.txt
 
-15 directories, 12 files`),
+16 directories, 12 files`),
 }
 
 var tab = [...][]byte{

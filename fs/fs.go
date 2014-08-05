@@ -41,6 +41,9 @@ type Filesystem interface {
 	// Remove deletes a file given by the path.
 	Remove(string) error
 	// Stat gives a file or a directory details, given by the path.
+	RemoveAll(string) error
+	// RemoveAll deletes a file or a directory with all its descendants, given
+	// by the path.
 	Stat(string) (os.FileInfo, error)
 	// Walk walks the file tree starting at root, calling WalkFunc for each file
 	// or directory.
@@ -74,6 +77,11 @@ func (FS) Open(name string) (File, error) {
 // Remove wraps os.Remove.
 func (FS) Remove(name string) error {
 	return os.Remove(name)
+}
+
+// RemoveAll wraps os.RemoveAll.
+func (FS) RemoveAll(name string) error {
+	return os.RemoveAll(name)
 }
 
 // Stat wraps os.Stat.
@@ -113,6 +121,11 @@ func Open(name string) (File, error) {
 // Remove wraps Default.Remove.
 func Remove(name string) error {
 	return Default.Remove(name)
+}
+
+// RemoveAll wraps Default.RemoveAll.
+func RemoveAll(name string) error {
+	return Default.RemoveAll(name)
 }
 
 // Stat wraps Default.Stat.
