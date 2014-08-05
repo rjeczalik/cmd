@@ -329,12 +329,12 @@ func TestRemoveAll(t *testing.T) {
 		},
 	}
 	for i, cas := range cases {
-		fs := Must(TabTree(large))
-		if err := fs.RemoveAll(cas.path); err != nil {
+		fs, path := Must(TabTree(large)), filepath.FromSlash(cas.path)
+		if err := fs.RemoveAll(path); err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if _, err := fs.Open(cas.path); err == nil || !os.IsNotExist(err) {
+		if _, err := fs.Open(path); err == nil || !os.IsNotExist(err) {
 			t.Errorf("want err to indicate the path does not exist; got %q (i=%d)", err, i)
 			continue
 		}
