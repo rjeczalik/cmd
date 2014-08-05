@@ -46,7 +46,11 @@ LOOP:
 	return true
 }
 
-func TestReaddirnames(t *testing.T) {
+func TestReadpaths(t *testing.T) {
+	t.Skip("TODO(rjeczalik)")
+}
+
+func TestReaddirpaths(t *testing.T) {
 	cases := map[string][]string{
 		filepath.FromSlash("/data/github.com/user/example"): {
 			"assets",
@@ -56,13 +60,13 @@ func TestReaddirnames(t *testing.T) {
 			"dir",
 		},
 	}
-	g := Glob{FS: testdata}
+	c := Control{FS: testdata}
 	for dir, cas := range cases {
 		for _, b := range [...]bool{false, true} {
-			if g.Hidden = b; b {
+			if c.Hidden = b; b {
 				cas = append(cas, ".git")
 			}
-			names := g.Readdirnames(dir)
+			names := c.Readdirpaths(dir)
 			if names == nil {
 				t.Errorf("want names!=nil (dir=%q,hidden=%v)", dir, b)
 				continue
@@ -79,7 +83,7 @@ func TestIntersect(t *testing.T) {
 		filepath.FromSlash("github.com/user/example"),
 		filepath.FromSlash("github.com/user/example/dir"),
 	}
-	g := Glob{FS: testdata}
+	g := Control{FS: testdata}
 	for _, b := range [...]bool{false, true} {
 		if g.Hidden = b; b {
 			cas = append(cas, filepath.FromSlash("github.com/user/example/.git"))
@@ -93,6 +97,10 @@ func TestIntersect(t *testing.T) {
 			t.Errorf("want names=%v; got %v (hidden=%v)", cas, names, b)
 		}
 	}
+}
+
+func TestFind(t *testing.T) {
+	t.Skip("TODO(rjeczalik)")
 }
 
 var schema = fs.FS{
@@ -139,7 +147,7 @@ func TestIntersect_SchemaUnique(t *testing.T) {
 	cas := []string{
 		filepath.FromSlash("licstat/schema"),
 	}
-	names := (Glob{FS: schema}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
+	names := (Control{FS: schema}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
 	if names == nil {
 		t.Fatal("want names!=nil")
 	}

@@ -44,7 +44,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/rjeczalik/tools/fs"
 	"github.com/rjeczalik/tools/fs/fsutil"
@@ -89,10 +88,7 @@ func main() {
 		fmt.Println(usage)
 		return
 	}
-	var (
-		path string
-		root string
-	)
+	var root string
 	if len(flag.Args()) > 1 {
 		die(usage)
 	}
@@ -101,37 +97,15 @@ func main() {
 	} else {
 		root, _ = os.Getwd()
 	}
-	path = root
 	var (
-		glob = []string{path}
-		spy  = memfs.New()
-		fs   = fsutil.TeeFilesystem(fs.FS{}, spy)
+		spy = memfs.New()
+		c   = fsutil.Control{FS: fsutil.TeeFilesystem(fs.FS{}, spy), Hidden: false}
 	)
-	islvlok := func(s string) bool {
-		if lvl == 0 {
-			return true
-		}
-		return strings.Count(s[strings.Index(s, root)+len(root):],
-			string(os.PathSeparator)) < lvl
-	}
-	for len(glob) > 0 {
-		path, glob = glob[len(glob)-1], glob[:len(glob)-1]
-		f, err := fs.Open(path)
-		if err != nil {
-			continue
-		}
-		fi, err := f.Readdir(0)
-		if err != nil {
-			f.Close()
-			continue
-		}
-		for _, fi := range fi {
-			s := filepath.Join(path, filepath.Base(fi.Name()))
-			if fi.IsDir() && islvlok(s) {
-				glob = append(glob, s)
-			}
-		}
-		f.Close()
+	_ = c.Find(root, lvl)
+	spy, err := spy.Cd(root)
+	if err != nil {
+		// TODO(rjeczalik): improve error message
+		die(err)
 	}
 	var ndir, nfile int
 	spy.Walk(string(os.PathSeparator), func(_ string, fi os.FileInfo, _ error) (err error) {
@@ -142,10 +116,5 @@ func main() {
 		}
 		return
 	})
-	spy, err := spy.Cd(root)
-	if err != nil {
-		// TODO(rjeczalik): improve error message
-		die(err)
-	}
 	fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir, nfile)
 }
