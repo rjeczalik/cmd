@@ -30,14 +30,17 @@ var trees = []memfs.FS{
 		"usls.json\nsrc\n\tlicstat\n\t\tschema\n\t\t\tschema.go\n\t\t\ttmp/"))),
 }
 
-func equal(lhs, rhs []string) bool {
-	if len(lhs) != len(rhs) {
+func equal(lhs, cas []string) bool {
+	if len(lhs) != len(cas) {
 		return false
+	}
+	for i := range cas {
+		cas[i] = filepath.FromSlash(cas[i])
 	}
 LOOP:
 	for i := range lhs {
-		for j := range rhs {
-			if lhs[i] == rhs[j] {
+		for j := range cas {
+			if lhs[i] == cas[j] {
 				continue LOOP
 			}
 		}
@@ -79,37 +82,52 @@ func TestReaddirpaths(t *testing.T) {
 }
 
 func TestIntersect(t *testing.T) {
-	cas := []string{
-		filepath.FromSlash("github.com/user/example"),
-		filepath.FromSlash("github.com/user/example/dir"),
+	cases := [...]struct {
+		c    Control
+		dirs []string
+		src  string
+		dst  string
+	}{
+		0: {
+			Control{FS: trees[0]},
+			[]string{
+				"github.com/user/example",
+				"github.com/user/example/dir",
+			},
+			"/src", "/data",
+		},
+		1: {
+			Control{FS: trees[0], Hidden: true},
+			[]string{
+				"github.com/user/example",
+				"github.com/user/example/dir",
+				"github.com/user/example/.git",
+			},
+			"/src", "/data",
+		},
+		2: {
+			Control{FS: trees[2]},
+			[]string{
+				"licstat/schema",
+			},
+			"/src", "/schema",
+		},
 	}
-	g := Control{FS: trees[0]}
-	for _, b := range [...]bool{false, true} {
-		if g.Hidden = b; b {
-			cas = append(cas, filepath.FromSlash("github.com/user/example/.git"))
-		}
-		names := g.Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/data"))
-		if names == nil {
-			t.Errorf("want names!=nil (hidden=%v)", b)
+	for i, cas := range cases {
+		dirs := cas.c.Intersect(
+			filepath.FromSlash(cas.src),
+			filepath.FromSlash(cas.dst),
+		)
+		if len(dirs) == 0 {
+			t.Errorf("want len(dirs)!=0 (i=%d)", i)
 			continue
 		}
-		if !equal(names, cas) {
-			t.Errorf("want names=%v; got %v (hidden=%v)", cas, names, b)
+		if !equal(dirs, cas.dirs) {
+			t.Errorf("want dirs=%v; got %v (i=%d)", cas.dirs, dirs, i)
 		}
 	}
 }
 
 func TestFind(t *testing.T) {
 	t.Skip("TODO(rjeczalik)")
-}
-
-func TestIntersect_SchemaUnique(t *testing.T) {
-	cas := []string{filepath.FromSlash("licstat/schema")}
-	names := (Control{FS: trees[2]}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
-	if names == nil {
-		t.Fatal("want names!=nil")
-	}
-	if !equal(names, cas) {
-		t.Errorf("want names=%v; got %v", cas, names)
-	}
 }
