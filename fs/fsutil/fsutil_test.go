@@ -112,6 +112,29 @@ func TestIntersect(t *testing.T) {
 			},
 			"/src", "/schema",
 		},
+		3: {
+			Control{FS: trees[2], Hidden: true},
+			[]string{
+				"licstat/schema",
+			},
+			"/src", "/schema",
+		},
+		4: {
+			Control{FS: trees[1]},
+			[]string{
+				"github.com/user/example",
+				"github.com/user/example/dir",
+			},
+			"/src", "/data",
+		},
+		5: {
+			Control{FS: trees[1], Hidden: true},
+			[]string{
+				"github.com/user/example",
+				"github.com/user/example/dir",
+			},
+			"/src", "/data",
+		},
 	}
 	for i, cas := range cases {
 		dirs := cas.c.Intersect(
