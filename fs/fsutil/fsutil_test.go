@@ -4,31 +4,31 @@ import (
 	"path/filepath"
 	"testing"
 
-	fs "github.com/rjeczalik/tools/fs/memfs"
+	"github.com/rjeczalik/tools/fs/memfs"
 )
 
-var testdata = fs.Must(fs.TabTree([]byte(`.
-data
-	github.com
-		user
-			example
-				.git/
-				dir
-					dir.txt
-				assets
-					js
-						app.js
-						link.js
-					css
-						default.css
-src
-	github.com
-		user
-			example
-				.git/
-				dir
-					dir.go
-				example.go`)))
+var trees = []memfs.FS{
+	0: memfs.Must(memfs.TabTree([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t\t" +
+		"\texample\n\t\t\t\t.git/\n\t\t\t\tdir\n\t\t\t\t\tdir.txt\n\t\t\t\tas" +
+		"sets\n\t\t\t\t\tjs\n\t\t\t\t\t\tapp.js\n\t\t\t\t\t\tlink.js\n\t\t\t" +
+		"\t\tcss\n\t\t\t\t\t\tdefault.css\nsrc\n\tgithub.com\n\t\tuser\n\t\t" +
+		"\texample\n\t\t\t\t.git/\n\t\t\t\tdir\n\t\t\t\t\tdir.go\n\t\t\t\tex" +
+		"ample.go"))),
+	1: memfs.Must(memfs.TabTree([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t" +
+		"\t\texample\n\t\t\t\tdir\n\t\t\t\t\tdir.dat\n\t\t\t\tfirst\n\t\t\t\t" +
+		"\tcss\n\t\t\t\t\t\tfirst.css\n\t\t\t\t\tjs\n\t\t\t\t\t\tfirst.js\n\t" +
+		"\t\t\tsecond\n\t\t\t\t\tcss\n\t\t\t\t\t\tsecond.css\n\t\t\t\t\tjs\n" +
+		"\t\t\t\t\t\tsecond.js\nsrc\n\tgithub.com\n\t\tuser\n\t\t\texample\n" +
+		"\t\t\t\tdir\n\t\t\t\t\tdir.go\n\t\t\t\texample.go"))),
+	2: memfs.Must(memfs.TabTree([]byte(".\nschema\n\tlicstat\n\t\tschema\n\t" +
+		"\t\tdatabasequery\n\t\t\t\treqaddaliasls.json\n\t\t\t\treqdeletef.j" +
+		"son\n\t\t\t\treqdeletels.json\n\t\t\t\treqmergels.json\n\t\t\t\treq" +
+		"querystatus.json\n\t\t\tdefinitions.json\n\t\t\tgeneralinfo\n\t\t\t" +
+		"\treqinstallpath.json\n\t\t\tlicense\n\t\t\t\treqlicensedetail.json" +
+		"\n\t\t\tmonitorconf\n\t\t\t\treqaddls.json\n\t\t\t\treqcheckls.json" +
+		"\n\t\t\t\treqeditls.json\n\t\t\t\treqremovels.json\n\t\t\t\treqstat" +
+		"usls.json\nsrc\n\tlicstat\n\t\tschema\n\t\t\tschema.go\n\t\t\ttmp/"))),
+}
 
 func equal(lhs, rhs []string) bool {
 	if len(lhs) != len(rhs) {
@@ -60,7 +60,7 @@ func TestReaddirpaths(t *testing.T) {
 			"dir",
 		},
 	}
-	c := Control{FS: testdata}
+	c := Control{FS: trees[0]}
 	for dir, cas := range cases {
 		for _, b := range [...]bool{false, true} {
 			if c.Hidden = b; b {
@@ -83,7 +83,7 @@ func TestIntersect(t *testing.T) {
 		filepath.FromSlash("github.com/user/example"),
 		filepath.FromSlash("github.com/user/example/dir"),
 	}
-	g := Control{FS: testdata}
+	g := Control{FS: trees[0]}
 	for _, b := range [...]bool{false, true} {
 		if g.Hidden = b; b {
 			cas = append(cas, filepath.FromSlash("github.com/user/example/.git"))
@@ -103,51 +103,9 @@ func TestFind(t *testing.T) {
 	t.Skip("TODO(rjeczalik)")
 }
 
-var schema = fs.FS{
-	Tree: fs.Directory{
-		"schema": fs.Directory{
-			"licstat": fs.Directory{
-				"schema": fs.Directory{
-					"databasequery": fs.Directory{
-						"reqaddaliasls.json":  fs.File{},
-						"reqdeletef.json":     fs.File{},
-						"reqdeletels.json":    fs.File{},
-						"reqmergels.json":     fs.File{},
-						"reqquerystatus.json": fs.File{},
-					},
-					"generalinfo": fs.Directory{
-						"reqinstallpath.json": fs.File{},
-					},
-					"license": fs.Directory{
-						"reqlicensedetail.json": fs.File{},
-					},
-					"monitorconf": fs.Directory{
-						"reqaddls.json":    fs.File{},
-						"reqcheckls.json":  fs.File{},
-						"reqeditls.json":   fs.File{},
-						"reqremovels.json": fs.File{},
-						"reqstatusls.json": fs.File{},
-					},
-					"definitions.json": fs.File{},
-				},
-			},
-		},
-		"src": fs.Directory{
-			"licstat": fs.Directory{
-				"schema": fs.Directory{
-					"tmp":       fs.Directory{},
-					"schema.go": fs.File{},
-				},
-			},
-		},
-	},
-}
-
 func TestIntersect_SchemaUnique(t *testing.T) {
-	cas := []string{
-		filepath.FromSlash("licstat/schema"),
-	}
-	names := (Control{FS: schema}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
+	cas := []string{filepath.FromSlash("licstat/schema")}
+	names := (Control{FS: trees[2]}).Intersect(filepath.FromSlash("/src"), filepath.FromSlash("/schema"))
 	if names == nil {
 		t.Fatal("want names!=nil")
 	}
