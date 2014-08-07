@@ -76,9 +76,15 @@ const (
 // treatment - when defined, its value must be of a Property type.
 type Directory map[string]interface{}
 
-// Ls lists all the files of d directory in given order. It returns nil if
-// the directory is empty.
-func (d Directory) Ls(order Order) []string {
+// IsDir reports whether v is of Directory type.
+func IsDir(v interface{}) bool {
+	_, ok := v.(Directory)
+	return ok
+}
+
+// Lsnames lists all the files or directories names of the directory in the given
+// order. It returns nil if the directory is empty.
+func (d Directory) Lsnames(order Order) []string {
 	if dirlen(d) == 0 {
 		return nil
 	}
@@ -96,7 +102,7 @@ func (d Directory) Ls(order Order) []string {
 	case OrderLexicalDesc:
 		sort.Sort(sort.Reverse(sort.StringSlice(s)))
 	default:
-		panic("invalid order")
+		panic("unsupported order")
 	}
 	return s
 }

@@ -90,7 +90,7 @@ func newDirQueue(name string, dir Directory) dirQueue {
 	return dirQueue{
 		Name:  name,
 		Dir:   dir,
-		Queue: dir.Ls(OrderLexicalDesc),
+		Queue: dir.Lsnames(OrderLexicalDesc),
 	}
 }
 

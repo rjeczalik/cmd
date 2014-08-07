@@ -512,3 +512,21 @@ func TestWalk(t *testing.T) {
 		}
 	}
 }
+
+func TestIsDir(t *testing.T) {
+	cases := [...]struct {
+		item interface{}
+		ok   bool
+	}{
+		0: {File{}, false},
+		1: {Directory{}, true},
+		2: {Property{}, false},
+		3: {FS{}, false},
+		4: {"dir", false},
+	}
+	for i, cas := range cases {
+		if ok := IsDir(cas.item); ok != cas.ok {
+			t.Errorf("want ok=%v; got %v (i=%d)", cas.ok, ok, i)
+		}
+	}
+}
