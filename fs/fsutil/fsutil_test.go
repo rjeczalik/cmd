@@ -84,6 +84,18 @@ LOOP:
 	return true
 }
 
+func equaldiff(lhs, cas map[string][]string) bool {
+	if len(lhs) != len(cas) {
+		return false
+	}
+	for k, cas := range cas {
+		if lhs, ok := lhs[filepath.FromSlash(k)]; !ok || !equal(lhs, cas) {
+			return false
+		}
+	}
+	return true
+}
+
 func TestReadpaths(t *testing.T) {
 	t.Skip("TODO(rjeczalik)")
 }
@@ -175,13 +187,12 @@ func TestReaddirnames(t *testing.T) {
 
 func TestCatchSpy(t *testing.T) {
 	cases := [...]struct {
-		c     Control
 		depth int
+		c     Control
 		dirs  map[string][]string
 	}{
 		0: {
-			Control{FS: trees[3]},
-			1,
+			1, Control{FS: trees[3]},
 			map[string][]string{
 				filepath.FromSlash("/"): {
 					"/1",
@@ -202,8 +213,7 @@ func TestCatchSpy(t *testing.T) {
 			},
 		},
 		1: {
-			Control{FS: trees[3], Hidden: true},
-			1,
+			1, Control{FS: trees[3], Hidden: true},
 			map[string][]string{
 				filepath.FromSlash("/"): {
 					"/.1",
@@ -233,8 +243,7 @@ func TestCatchSpy(t *testing.T) {
 			},
 		},
 		2: {
-			Control{FS: trees[3]},
-			3,
+			3, Control{FS: trees[3]},
 			map[string][]string{
 				filepath.FromSlash("/abc/1"): {
 					"/abc/1/2",
@@ -283,7 +292,6 @@ func TestCatchSpy(t *testing.T) {
 				if !equal(found, v) {
 					t.Errorf("want found=%v; got %v (i=%d, dir=%s, j=%d)", v,
 						found, i, dir, j)
-					continue
 				}
 			}
 			found := (Control{FS: spy, Hidden: true}).Find(dir, cas.depth)
@@ -293,7 +301,6 @@ func TestCatchSpy(t *testing.T) {
 			}
 			if !equal(found, v) {
 				t.Errorf("want found=%v; got %v (i=%d, dir=%s)", v, found, i, dir)
-				continue
 			}
 		}
 	}
@@ -365,6 +372,89 @@ func TestIntersect(t *testing.T) {
 		}
 		if !equal(dirs, cas.dirs) {
 			t.Errorf("want dirs=%v; got %v (i=%d)", cas.dirs, dirs, i)
+		}
+	}
+}
+
+func TestIntersectInclude(t *testing.T) {
+	cases := [...]struct {
+		c    Control
+		diff map[string][]string
+		src  string
+		dst  string
+	}{
+		0: {
+			Control{FS: trees[1]},
+			map[string][]string{
+				"github.com/user/example/dir": nil,
+				"github.com/user/example": {
+					"github.com/user/example/first",
+					"github.com/user/example/second",
+				},
+			},
+			"/src", "/data",
+		},
+		1: {
+			Control{FS: trees[1], Hidden: true},
+			map[string][]string{
+				"github.com/user/example/dir": nil,
+				"github.com/user/example": {
+					"github.com/user/example/first",
+					"github.com/user/example/second",
+				},
+			},
+			"/src", "/data",
+		},
+		2: {
+			Control{FS: trees[0]},
+			map[string][]string{
+				"github.com/user/example": {
+					"github.com/user/example/assets",
+				},
+				"github.com/user/example/dir": nil,
+			},
+			"/src", "/data",
+		},
+		3: {
+			Control{FS: trees[0], Hidden: true},
+			map[string][]string{
+				"github.com/user/example/.git": nil,
+				"github.com/user/example": {
+					"github.com/user/example/assets",
+				},
+				"github.com/user/example/dir": nil,
+			},
+			"/src", "/data",
+		},
+		4: {
+			Control{FS: trees[2]},
+			map[string][]string{
+				"licstat/schema": nil,
+			},
+			"/src", "/schema",
+		},
+		5: {
+			Control{FS: trees[2], Hidden: true},
+			map[string][]string{
+				"licstat/schema": nil,
+			},
+			"/src", "/schema",
+		},
+	}
+	for i, cas := range cases {
+		if i != 3 {
+			continue
+		}
+		diff := cas.c.IntersectInclude(
+			filepath.FromSlash(cas.src),
+			filepath.FromSlash(cas.dst),
+		)
+		if len(diff) == 0 {
+			t.Errorf("want len(diff)!=0 (i=%d)", i)
+			continue
+		}
+		if !equaldiff(diff, cas.diff) {
+			t.Errorf("want diff=%v; got %v (i=%d)", cas.diff, diff, i)
 		}
 	}
 }

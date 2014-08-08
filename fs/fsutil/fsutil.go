@@ -4,9 +4,11 @@ package fsutil
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/rjeczalik/tools/fs"
+	"github.com/rjeczalik/tools/fs/memfs"
 )
 
 // Readpaths reads paths of all the files and directories of the 'dir' directory.
@@ -14,13 +16,13 @@ import (
 // were found, the 'dirs' slice will be nil. If the 'dir' was empty or error
 // occured during accessing the filesystem, both slice will be empty.
 func Readpaths(dir string) (files, dirs []string) {
-	return defaultControl.Readpaths(dir)
+	return Default.Readpaths(dir)
 }
 
 // Readdirpaths reads all paths of all subdirectories of the 'dir', except
 // the ones which begin with a dot.
 func Readdirpaths(dir string) []string {
-	return defaultControl.Readdirpaths(dir)
+	return Default.Readdirpaths(dir)
 }
 
 // Readdirpaths reads all names of all subdirectories of the 'dir', except
@@ -58,7 +60,7 @@ func Readdirnames(dir string) []string {
 //
 //   []string{"github.com/user/example"}
 func Intersect(src, dir string) []string {
-	return defaultControl.Intersect(src, dir)
+	return Default.Intersect(src, dir)
 }
 
 // Find globs into 'dir' directory, reading all files and directories except those,
@@ -69,7 +71,7 @@ func Intersect(src, dir string) []string {
 //
 // On success it returns full paths for files and directories it found.
 func Find(dir string, n int) []string {
-	return defaultControl.Find(dir, n)
+	return Default.Find(dir, n)
 }
 
 // Control is the package control structure, allows for altering the behavior
@@ -148,7 +150,7 @@ func (c Control) readall(dir string) (files, dirs []string) {
 	return
 }
 
-func depthBelow(depth int, root, dir string) bool {
+func isDepthBelow(depth int, root, dir string) bool {
 	if depth <= 0 {
 		return true
 	}
@@ -176,7 +178,7 @@ func (c Control) Find(dir string, n int) []string {
 		}
 		for _, d := range dirs {
 			d = filepath.Join(path, filepath.Base(d))
-			if depthBelow(n, dir, d) {
+			if isDepthBelow(n, dir, d) {
 				glob = append(glob, d)
 			}
 			all = append(all, d)
@@ -226,11 +228,59 @@ func (c Control) Intersect(src, dir string) []string {
 	return s
 }
 
+func notindirs(s []string, x string) bool {
+	for i := range s {
+		if len(s[i]) > len(x) && strings.HasSuffix(s[i], x) &&
+			s[i][len(s[i])-len(x)-1] == os.PathSeparator {
+			return false
+		}
+	}
+	return true
+}
+
+// IntersectInclude is not documented yet, please see TestIntersectInclude for
+// temporary usage details.
+//
+// TODO(rjeczalik): document
+func (c Control) IntersectInclude(src, dir string) map[string][]string {
+	var (
+		old = c.FS
+		spy = memfs.New()
+		tee = TeeFilesystem(old, spy)
+	)
+	c.FS = tee
+	dirs := c.Intersect(src, dir)
+	c.FS = old
+	switch len(dirs) {
+	case 0:
+		return nil
+	case 1:
+		return map[string][]string{dirs[0]: nil}
+	}
+	sort.StringSlice(dirs).Sort()
+	m := make(map[string][]string, len(dirs))
+	for i := 1; i < len(dirs); i++ {
+		m[dirs[i]] = nil
+		j, n := strings.Index(dirs[i], dirs[i-1]), len(dirs[i-1])
+		if j == -1 || dirs[i][j+n] != os.PathSeparator {
+			continue
+		}
+		for _, name := range (Control{FS: spy, Hidden: c.Hidden}).Readdirnames(
+			filepath.Join(dir, dirs[i-1])) {
+			if notindirs(dirs, name) {
+				m[dirs[i-1]] = append(m[dirs[i-1]], filepath.Join(dirs[i-1], name))
+			}
+		}
+	}
+	return m
+}
+
 func (c Control) hidden(name string) bool {
 	return !c.Hidden && name[0] == '.'
 }
 
-var defaultControl = Control{
+// Default is not documented yet, altougth it really hopes to be.
+var Default = Control{
 	FS:     fs.Default,
 	Hidden: false,
 }
