@@ -253,7 +253,7 @@ w
 
 func TestString(t *testing.T) {
 	for i, cas := range cases {
-		fs, err := Unix.Tree(strings.NewReader(cas.String()))
+		fs, err := Unix.Decode(strings.NewReader(cas.String()))
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -266,7 +266,7 @@ func TestString(t *testing.T) {
 
 func TestUnixTree(t *testing.T) {
 	for i, p := range unix {
-		fs, err := UnixTree(p)
+		fs, err := UnmarshalUnix(p)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -279,7 +279,7 @@ func TestUnixTree(t *testing.T) {
 
 func TestTabTree(t *testing.T) {
 	for i, p := range tab {
-		fs, err := TabTree(p)
+		fs, err := UnmarshalTab(p)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -311,7 +311,7 @@ func TestCustomTreeErr(t *testing.T) {
 		2: {
 			{0, "a", nil},
 			{1, "b", nil},
-			{2, "c", ErrCustomTree},
+			{2, "c", ErrTreeBuilder},
 			{3, "d", nil},
 		},
 	}
@@ -319,15 +319,15 @@ func TestCustomTreeErr(t *testing.T) {
 	p := make([]byte, 8)
 	for i, cas := range cases {
 		j := 0
-		ct := CustomTree(func([]byte) (n int, p []byte, e error) {
+		tb := TreeBuilder{DecodeLine: func([]byte) (n int, p []byte, e error) {
 			n, p, e = cas[j].depth, []byte(cas[j].name), cas[j].err
 			if j < len(cas)-1 {
 				j++
 			}
 			return
-		})
+		}}
 		buf := bytes.NewReader(tab[1])
-		if _, err := ct.Tree(buf); err == nil {
+		if _, err := tb.Decode(buf); err == nil {
 			t.Errorf("want err to be non-nil (i=%d)", i)
 			continue
 		}

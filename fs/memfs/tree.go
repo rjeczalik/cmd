@@ -38,7 +38,7 @@ var (
 // String can be use to convert between Tab and Unix tree representations, like
 // in the following example:
 //
-//   var fs = memfs.Must(memfs.TabTree([]byte(".\ndir\n\tfile1.txt\n\tfile2.txt")))
+//   var fs = memfs.Must(memfs.UnmarshalTab([]byte(".\ndir\n\tfile1.txt\n\tfile2.txt")))
 //   fmt.Println(fs)
 //
 // Which prints:
@@ -128,24 +128,36 @@ func max(i, j int) int {
 	return j
 }
 
-// CustomTree instructs tree builder how to parse single line of given buffer,
-// where 'name' is the name of a tree node, 'depth' is its depth in the tree
-// and 'err' eventual parsing failure. The 'line' is guaranteed to be non-nil
-// and non-empty.
-// The function is expected to return non-nil and non-empty name and non-negative
-// depth when err is nil. If the err is io.EOF, it will be translated to ErrCustomTree,
-// because it will.
-type CustomTree func(line []byte) (depth int, name []byte, err error)
+// ErrTreeBuilder represents a failure in handling returned values from
+// a TreeBuilder.DecodeLine call.
+var ErrTreeBuilder = errors.New("invalid name and/or depth values")
 
-// Unix is a tree builder for the 'tree' Unix command.
-var Unix CustomTree
+// TreeBuilder implements encoding.TextMarshaler and encoding.TextUnmarshaler
+// for a FS structure. It may be configured to support custom formats by
+// providing DecodeLine member function.
+// DecodeLine instructs the TreeBuilder.Decode how to parse single line of given
+// buffer, where 'name' is the name of a tree node, 'depth' is its depth in
+// the tree and 'err' eventual parsing failure. The 'line' is guaranteed to be
+// non-nil and non-empty.
+// The function is expected to return non-nil and non-empty name and non-negative
+// depth when err is nil. If the err is io.EOF, it will be translated to ErrTreeBuilder,
+// because it will.
+// If DecodeLine is nil, Tab.DecodeLine is used.
+type TreeBuilder struct {
+	DecodeLine func([]byte) (int, []byte, error)
+}
+
+// Unix is a tree builder for the 'tree' Unix command. It's guaranteed calls
+// to Unix.Decode do not return ErrTreeBuilder.
+var Unix TreeBuilder
 
 // Tab is a tree builder for simplified tree representation, where each level
-// is idented with one tabulation character (\t) only.
-var Tab CustomTree
+// is idented with one tabulation character (\t) only. It's guaranteed calls
+// to Tab.Decode do not return ErrTreeBuilder.
+var Tab TreeBuilder
 
 func init() {
-	Unix = func(p []byte) (depth int, name []byte, err error) {
+	Unix.DecodeLine = func(p []byte) (depth int, name []byte, err error) {
 		var n int
 		// TODO(rjeczalik): Count up to first non-box character.
 		depth = (bytes.Count(p, boxSpace) + bytes.Count(p, boxHardSpace) +
@@ -162,21 +174,17 @@ func init() {
 		name = name[n+1:]
 		return
 	}
-	Tab = func(p []byte) (depth int, name []byte, err error) {
+	Tab.DecodeLine = func(p []byte) (depth int, name []byte, err error) {
 		depth = bytes.Count(p, []byte{'\t'})
 		name = p[depth:]
 		return
 	}
 }
 
-// ErrCustomTree represents a failure in handling returned values from a CustomTree
-// call.
-var ErrCustomTree = errors.New("invalid name and/or depth values")
-
-// Tree builds FS.Tree from given reader using CustomTree callback for parsing
-// node's name and its depth in the tree. Tree returns ErrCustomTree error when
+// Decode builds FS.Tree from given reader using ct.DecodeLine callback for parsing
+// node's name and its depth in the tree. Tree returns ErrTreeBuilder error when
 // a call to ct gives invalid values.
-func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
+func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 	var (
 		e         error
 		dir       = Directory{}
@@ -223,13 +231,13 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 			io.Copy(ioutil.Discard, buf)
 			err, line = io.EOF, nil
 		} else {
-			depth, name, e = ct(bytes.TrimRightFunc(line, unicode.IsSpace))
+			depth, name, e = tb.DecodeLine(bytes.TrimRightFunc(line, unicode.IsSpace))
 			if len(name) == 0 || depth < 0 || e != nil {
 				// Drain the buffer, needed for some use-cases (encoding, net/rpc)
 				io.Copy(ioutil.Discard, buf)
 				err, line = e, nil
 				if err == nil || err == io.EOF {
-					err = ErrCustomTree
+					err = ErrTreeBuilder
 				}
 			}
 		}
@@ -269,7 +277,7 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 	}
 }
 
-// UnixTree builds FS.Tree from a buffer that contains tree-like (Unix command) output.
+// UnmarshalUnix builds FS.Tree from a buffer that contains tree-like (Unix command) output.
 //
 // Example:
 //
@@ -277,7 +285,7 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 //   └── dir
 //       └── file.txt`)
 //
-//   var fs = memfs.Must(memfs.UnixTree(tree))
+//   var fs = memfs.Must(memfs.UnmarshalUnix(tree))
 //
 // The above is an equivalent to:
 //
@@ -289,17 +297,17 @@ func (ct CustomTree) Tree(r io.Reader) (fs FS, err error) {
 //              },
 //            }
 //
-// UnixTree(p) is a short alternative to the Unix.Tree(bytes.NewReader(p)).
-func UnixTree(p []byte) (FS, error) {
-	return Unix.Tree(bytes.NewReader(p))
+// UnmarshalUnix(p) is a short alternative to the Unix.Decode(bytes.NewReader(p)).
+func UnmarshalUnix(p []byte) (FS, error) {
+	return Unix.Decode(bytes.NewReader(p))
 }
 
-// TabTree builds FS.Tree from a buffer that contains \t-separated file tree.
+// UnmarshalTab builds FS.Tree from a buffer that contains \t-separated file tree.
 //
 // Example:
 //
 //   var tree = []byte(`.\ndir\n\tfile1.txt\n\tfile2.txt`)
-//   var fs = memfs.Must(memfs.TabTree(tree))
+//   var fs = memfs.Must(memfs.UnmarshalTab(tree))
 //
 // The above is an equivalent to:
 //
@@ -312,7 +320,7 @@ func UnixTree(p []byte) (FS, error) {
 //              },
 //            }
 //
-// TabTree(p) is a short alternative to the Tab.Tree(bytes.NewReader(p)).
-func TabTree(p []byte) (FS, error) {
-	return Tab.Tree(bytes.NewReader(p))
+// UnmarshalTab(p) is a short alternative to the Tab.Decode(bytes.NewReader(p)).
+func UnmarshalTab(p []byte) (FS, error) {
+	return Tab.Decode(bytes.NewReader(p))
 }

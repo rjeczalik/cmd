@@ -14,7 +14,7 @@ var tree = []byte(".\na\n\tb1\n\t\tc1\n\t\t\tc1.txt\n\t\tc2\n\t\t\tc2.txt\n\t\t"
 	"\tz\n\t\t\t\t1.txt\n\t\ty.txt\n")
 
 func TestTee(t *testing.T) {
-	fs := memfs.Must(memfs.TabTree(tree))
+	fs := memfs.Must(memfs.UnmarshalTab(tree))
 	cases := [...]struct {
 		open []string
 		read []string
@@ -65,7 +65,7 @@ LOOP:
 				continue LOOP
 			}
 		}
-		if !memfs.Equal(spy, memfs.Must(memfs.TabTree(cas.fs))) {
+		if !memfs.Equal(spy, memfs.Must(memfs.UnmarshalTab(cas.fs))) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}

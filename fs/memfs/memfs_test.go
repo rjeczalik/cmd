@@ -17,7 +17,7 @@ var large = []byte(".\na\n\tb1\n\t\tc1\n\t\t\tc1.txt\n\t\tc2\n\t\t\tc2.txt\n\t\t
 	"\tz\n\t\t\t\t1.txt\n\t\ty.txt\n")
 
 func TestCreate(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := [...]struct {
 		file string
 		err  error
@@ -70,7 +70,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestMkdir(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := [...]struct {
 		dir string
 		err error
@@ -119,7 +119,7 @@ func TestMkdir(t *testing.T) {
 }
 
 func TestMkdirNop(t *testing.T) {
-	fs := Must(TabTree(large))
+	fs := Must(UnmarshalTab(large))
 	cases := [...]string{
 		0: "/a/b1",
 		1: "/",
@@ -130,7 +130,7 @@ func TestMkdirNop(t *testing.T) {
 	for i, mkdir := range []func(FS, string, os.FileMode) error{FS.Mkdir, FS.MkdirAll} {
 		for j, cas := range cases {
 			dir := filepath.FromSlash(cas)
-			mutfs := Must(TabTree(large))
+			mutfs := Must(UnmarshalTab(large))
 			if err := mkdir(mutfs, dir, 0xD); err != nil {
 				t.Errorf("want err=nil; got %q (i=%d, j=%d)", err, i, j)
 				continue
@@ -143,7 +143,7 @@ func TestMkdirNop(t *testing.T) {
 }
 
 func TestMkdirAll(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := [...]struct {
 		dir string
 		err error
@@ -189,7 +189,7 @@ func TestMkdirAll(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := [...]struct {
 		path string
 		dir  bool
@@ -226,7 +226,7 @@ func TestOpen(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := [...]struct {
 		file string
 		err  error
@@ -329,7 +329,7 @@ func TestRemoveAll(t *testing.T) {
 		},
 	}
 	for i, cas := range cases {
-		fs, path := Must(TabTree(large)), filepath.FromSlash(cas.path)
+		fs, path := Must(UnmarshalTab(large)), filepath.FromSlash(cas.path)
 		if err := fs.RemoveAll(path); err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
@@ -349,7 +349,7 @@ func TestRemoveAll(t *testing.T) {
 }
 
 func TestReaddir(t *testing.T) {
-	fs := Must(TabTree(small))
+	fs := Must(UnmarshalTab(small))
 	cases := map[string][]struct {
 		name string
 		dir  bool
@@ -401,7 +401,7 @@ func TestReaddir(t *testing.T) {
 }
 
 func TestCd(t *testing.T) {
-	fs := Must(TabTree(large))
+	fs := Must(UnmarshalTab(large))
 	cases := [...]struct {
 		path string
 		fs   []byte
@@ -428,7 +428,7 @@ func TestCd(t *testing.T) {
 		}}
 	for i, cas := range cases {
 		path := filepath.FromSlash(cas.path)
-		rhs := Must(TabTree(cas.fs))
+		rhs := Must(UnmarshalTab(cas.fs))
 		lhs, err := fs.Cd(path)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
@@ -441,7 +441,7 @@ func TestCd(t *testing.T) {
 }
 
 func TestWalk(t *testing.T) {
-	fs := Must(TabTree(large))
+	fs := Must(UnmarshalTab(large))
 	cases := [...]struct {
 		root  string
 		files map[string]bool // true -> directory, false -> file

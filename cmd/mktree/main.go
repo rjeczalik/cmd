@@ -113,7 +113,7 @@ func main() {
 		defer f.Close()
 		in = f
 	}
-	tree, err := memfs.Unix.Tree(in)
+	tree, err := memfs.Unix.Decode(in)
 	if err != nil {
 		die(err)
 	}

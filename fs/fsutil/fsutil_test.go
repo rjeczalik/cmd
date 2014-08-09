@@ -8,19 +8,19 @@ import (
 )
 
 var trees = []memfs.FS{
-	0: memfs.Must(memfs.TabTree([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t\t" +
+	0: memfs.Must(memfs.UnmarshalTab([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t\t" +
 		"\texample\n\t\t\t\t.git/\n\t\t\t\tdir\n\t\t\t\t\tdir.txt\n\t\t\t\tas" +
 		"sets\n\t\t\t\t\tjs\n\t\t\t\t\t\tapp.js\n\t\t\t\t\t\tlink.js\n\t\t\t" +
 		"\t\tcss\n\t\t\t\t\t\tdefault.css\nsrc\n\tgithub.com\n\t\tuser\n\t\t" +
 		"\texample\n\t\t\t\t.git/\n\t\t\t\tdir\n\t\t\t\t\tdir.go\n\t\t\t\tex" +
 		"ample.go"))),
-	1: memfs.Must(memfs.TabTree([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t" +
+	1: memfs.Must(memfs.UnmarshalTab([]byte(".\ndata\n\tgithub.com\n\t\tuser\n\t" +
 		"\t\texample\n\t\t\t\tdir\n\t\t\t\t\tdir.dat\n\t\t\t\tfirst\n\t\t\t\t" +
 		"\tcss\n\t\t\t\t\t\tfirst.css\n\t\t\t\t\tjs\n\t\t\t\t\t\tfirst.js\n\t" +
 		"\t\t\tsecond\n\t\t\t\t\tcss\n\t\t\t\t\t\tsecond.css\n\t\t\t\t\tjs\n" +
 		"\t\t\t\t\t\tsecond.js\nsrc\n\tgithub.com\n\t\tuser\n\t\t\texample\n" +
 		"\t\t\t\tdir\n\t\t\t\t\tdir.go\n\t\t\t\texample.go"))),
-	2: memfs.Must(memfs.TabTree([]byte(".\nschema\n\tlicstat\n\t\tschema\n\t" +
+	2: memfs.Must(memfs.UnmarshalTab([]byte(".\nschema\n\tlicstat\n\t\tschema\n\t" +
 		"\t\tdatabasequery\n\t\t\t\treqaddaliasls.json\n\t\t\t\treqdeletef.j" +
 		"son\n\t\t\t\treqdeletels.json\n\t\t\t\treqmergels.json\n\t\t\t\treq" +
 		"querystatus.json\n\t\t\tdefinitions.json\n\t\t\tgeneralinfo\n\t\t\t" +
