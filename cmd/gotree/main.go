@@ -110,16 +110,22 @@ func main() {
 		fmt.Println(usage)
 		return
 	}
-	var root string
 	if len(flag.Args()) > 1 {
 		die(usage)
 	}
+	var (
+		root      = "."
+		spy       = memfs.New()
+		printroot = true
+	)
 	if len(flag.Args()) == 1 {
-		root = filepath.Clean(flag.Args()[0])
-	} else {
-		root, _ = os.Getwd()
+		root = flag.Args()[0]
 	}
-	var spy = memfs.New()
+	if root == "." {
+		root, _ = os.Getwd()
+		printroot = false
+	}
+	root = filepath.Clean(root)
 	(fsutil.Control{FS: fsutil.TeeFilesystem(fs.FS{}, spy), Hidden: all}).Find(root, lvl)
 	spy, err := spy.Cd(root)
 	if err != nil {
@@ -129,9 +135,17 @@ func main() {
 	var ndir, nfile int
 	if dir {
 		spy.Walk(string(os.PathSeparator), countdirdelfile(&ndir, spy))
-		fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
+		if printroot {
+			fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
+		} else {
+			fmt.Printf("%s\n%d directories\n", spy, ndir-1)
+		}
 	} else {
 		spy.Walk(string(os.PathSeparator), countdirfile(&ndir, &nfile))
-		fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
+		if printroot {
+			fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
+		} else {
+			fmt.Printf("%s\n%d directories, %d files\n", spy, ndir-1, nfile)
+		}
 	}
 }
