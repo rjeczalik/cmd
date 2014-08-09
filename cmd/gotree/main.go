@@ -58,7 +58,7 @@ USAGE:
 
 OPTIONS:
 	-a			Lists also hidden files
-	-d			Lists directories only (NOT IMPLEMENTED)
+	-d			Lists directories only
 	-L level	Descends only <level> directories deep`
 
 var (
@@ -69,7 +69,7 @@ var (
 
 func init() {
 	flag.BoolVar(&all, "a", false, "")
-	flag.BoolVar(&dir, "d", false, "") // TODO
+	flag.BoolVar(&dir, "d", false, "")
 	flag.IntVar(&lvl, "L", 0, "")
 	flag.Parse()
 }
@@ -81,6 +81,28 @@ func die(v interface{}) {
 
 func ishelp(s string) bool {
 	return s == "-h" || s == "-help" || s == "help" || s == "--help" || s == "/?"
+}
+
+func countdirfile(ndir, nfile *int) filepath.WalkFunc {
+	return func(_ string, fi os.FileInfo, _ error) (err error) {
+		if fi.IsDir() {
+			*ndir++
+		} else {
+			*nfile++
+		}
+		return
+	}
+}
+
+func countdirdelfile(ndir *int, fs memfs.FS) filepath.WalkFunc {
+	return func(s string, fi os.FileInfo, _ error) (err error) {
+		if fi.IsDir() {
+			*ndir++
+		} else {
+			err = fs.Remove(s)
+		}
+		return
+	}
 }
 
 func main() {
@@ -105,15 +127,11 @@ func main() {
 		die(err)
 	}
 	var ndir, nfile int
-	spy.Walk(string(os.PathSeparator), func(_ string, fi os.FileInfo, _ error) (err error) {
-		if fi.IsDir() {
-			ndir++
-		} else {
-			nfile++
-		}
-		return
-	})
-	// Root directory does not count.
-	ndir--
-	fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir, nfile)
+	if dir {
+		spy.Walk(string(os.PathSeparator), countdirdelfile(&ndir, spy))
+		fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
+	} else {
+		spy.Walk(string(os.PathSeparator), countdirfile(&ndir, &nfile))
+		fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
+	}
 }
