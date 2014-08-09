@@ -129,6 +129,28 @@ func New() FS {
 	}
 }
 
+// Encode produces Unix-tree-like filesystem representation as a string.
+//
+// Example
+//
+// String can be use to convert between Tab and Unix tree representations, like
+// in the following example:
+//
+//   var fs = memfs.Must(memfs.UnmarshalTab([]byte(".\ndir\n\tfile1.txt\n\tfile2.txt")))
+//   fmt.Println(fs)
+//
+// Which prints:
+//
+//   .
+//   └── dir
+//       ├── file1.txt
+//       └── file2.txt
+func (fs FS) String() string {
+	var buf = bytes.NewBuffer(make([]byte, 0, 128))
+	Unix.Encode(fs, buf)
+	return buf.String()
+}
+
 // Cd gives new filesystem with a root starting at the path of the old filesystem.
 func (fs FS) Cd(path string) (FS, error) {
 	dir, perr := fs.lookup(path)
@@ -278,7 +300,7 @@ func (fs FS) Walk(root string, fn filepath.WalkFunc) (err error) {
 	if err = fn(root, fileinfo{readproperty(dir), root, 0, true}, nil); err != nil {
 		return
 	}
-	ifn := func(s string, v interface{}, _ []dirQueue) bool {
+	ifn := func(s string, v interface{}, _ []dirQueue) (err error) {
 		s = filepath.Join(root, s)
 		var fi = fileinfo{
 			p: readproperty(v),
@@ -294,9 +316,9 @@ func (fs FS) Walk(root string, fn filepath.WalkFunc) (err error) {
 		}
 		// TODO(rjeczalik): support filepath.SkipDir
 		err = fn(s, fi, nil)
-		return err == nil
+		return
 	}
-	dfs(dir, ifn)
+	err = dfs(dir, ifn)
 	return
 }
 

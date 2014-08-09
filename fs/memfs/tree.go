@@ -12,8 +12,6 @@ import (
 	"unicode"
 )
 
-// TODO(rjeczalik): FS.String -> CustomPrinter type
-
 // Box drawings symbols - http://unicode-table.com/en/sections/box-drawing/.
 var (
 	boxVerticalRight = []byte("├")
@@ -31,55 +29,6 @@ var (
 	boxItemLast  = []byte("└──\u0020")
 )
 
-// String produces Unix-tree-like filesystem representation as a string.
-//
-// Example
-//
-// String can be use to convert between Tab and Unix tree representations, like
-// in the following example:
-//
-//   var fs = memfs.Must(memfs.UnmarshalTab([]byte(".\ndir\n\tfile1.txt\n\tfile2.txt")))
-//   fmt.Println(fs)
-//
-// Which prints:
-//
-//   .
-//   └── dir
-//       ├── file1.txt
-//       └── file2.txt
-func (fs FS) String() string {
-	if dirlen(fs.Tree) == 0 {
-		return ".\n"
-	}
-	var buf = bytes.NewBuffer(make([]byte, 0, 128))
-	// TODO(rjeczalik): fold long root path
-	buf.WriteByte('.')
-	buf.WriteByte('\n')
-	fn := func(s string, v interface{}, glob []dirQueue) bool {
-		var dq = &glob[len(glob)-1]
-		for i := 0; i < len(glob)-1; i++ {
-			if len(glob[i].Queue) != 0 {
-				buf.Write(boxDepth)
-			} else {
-				buf.Write(boxDepthLast)
-			}
-		}
-		if len(dq.Queue) != 0 {
-			buf.Write(boxItem)
-		} else {
-			buf.Write(boxItemLast)
-		}
-		buf.WriteString(filepath.Base(s))
-		if dir, ok := v.(Directory); ok && dirlen(dir) == 0 {
-			buf.WriteByte('/')
-		}
-		buf.WriteByte('\n')
-		return true
-	}
-	dfs(fs.Tree, fn)
-	return buf.String()
-}
-
 type dirQueue struct {
 	Name  string
 	Dir   Directory
@@ -94,7 +43,7 @@ func newDirQueue(name string, dir Directory) dirQueue {
 	}
 }
 
-func dfs(d Directory, fn func(name string, item interface{}, state []dirQueue) bool) {
+func dfs(d Directory, fn func(name string, item interface{}, state []dirQueue) error) (err error) {
 	if dirlen(d) == 0 {
 		return
 	}
@@ -110,7 +59,7 @@ func dfs(d Directory, fn func(name string, item interface{}, state []dirQueue) b
 		}
 		s, dq.Queue = dq.Queue[len(dq.Queue)-1], dq.Queue[:len(dq.Queue)-1]
 		name := filepath.Join(dq.Name, s)
-		if !fn(name, dq.Dir[s], glob) {
+		if err = fn(name, dq.Dir[s], glob); err != nil {
 			return
 		}
 		if dir, ok := dq.Dir[s].(Directory); ok {
@@ -119,6 +68,7 @@ func dfs(d Directory, fn func(name string, item interface{}, state []dirQueue) b
 			}
 		}
 	}
+	return
 }
 
 func max(i, j int) int {
@@ -132,19 +82,48 @@ func max(i, j int) int {
 // a TreeBuilder.DecodeLine call.
 var ErrTreeBuilder = errors.New("invalid name and/or depth values")
 
-// TreeBuilder implements encoding.TextMarshaler and encoding.TextUnmarshaler
-// for a FS structure. It may be configured to support custom formats by
-// providing DecodeLine member function.
+// EncodingState denotes a part of a tree, which is currently being printed by
+// the TreeBuilder.Encode method.
+type EncodingState uint8
+
+// Example
+//
+// For each state the Unix.EncodeState function member:
+const (
+	EncodingLevel     EncodingState = iota // returns []byte("│   ")
+	EncodingLevelLast                      // returns ("    ")
+	EncodingItem                           // returns ("├── ")
+	EncodingItemLast                       // returns ("└── ")
+)
+
+// TreeBuilder provides an implementation of encoding.TextMarshaler and
+// encoding.TextUnmarshaler for the memfs.FS struct. It may be configured to
+// support custom formats by providing DecodeLine member function.
+//
+// Decoding
+//
 // DecodeLine instructs the TreeBuilder.Decode how to parse single line of given
 // buffer, where 'name' is the name of a tree node, 'depth' is its depth in
 // the tree and 'err' eventual parsing failure. The 'line' is guaranteed to be
 // non-nil and non-empty.
+//
 // The function is expected to return non-nil and non-empty name and non-negative
 // depth when err is nil. If the err is io.EOF, it will be translated to ErrTreeBuilder,
 // because it will.
-// If DecodeLine is nil, Tab.DecodeLine is used.
+//
+// If DecodeLine is nil, Unix.DecodeLine is used.
+//
+// Encoding
+//
+// EncodeState instructs the TreeBuilder.Encode how to print each part of the
+// tree, denoted by a EncodingState argument passed to it. The output is not
+// sanitized, which means e.g. newlines or other characters may break the tree
+// layout.
+//
+// If EncodeState is nil, Unix.EncodeState is used.
 type TreeBuilder struct {
-	DecodeLine func([]byte) (int, []byte, error)
+	DecodeLine  func([]byte) (int, []byte, error)
+	EncodeState func(EncodingState) []byte
 }
 
 // Unix is a tree builder for the 'tree' Unix command. It's guaranteed calls
@@ -174,21 +153,45 @@ func init() {
 		name = name[n+1:]
 		return
 	}
+	Unix.EncodeState = func(st EncodingState) []byte {
+		// TODO(rjeczalik): map?
+		switch st {
+		case EncodingLevel:
+			return boxDepth
+		case EncodingItem:
+			return boxItem
+		case EncodingLevelLast:
+			return boxDepthLast
+		case EncodingItemLast:
+			return boxItemLast
+		}
+		panic("unsupported encoding state")
+	}
 	Tab.DecodeLine = func(p []byte) (depth int, name []byte, err error) {
 		depth = bytes.Count(p, []byte{'\t'})
 		name = p[depth:]
 		return
 	}
+	Tab.EncodeState = func(st EncodingState) []byte {
+		switch st {
+		case EncodingLevel, EncodingLevelLast, EncodingItem, EncodingItemLast:
+			return []byte{'\t'}
+		}
+		panic("unsupported encoding state")
+	}
 }
 
-// Decode builds FS.Tree from given reader using ct.DecodeLine callback for parsing
+// Decode builds fs.Tree from given reader using bt.DecodeLine callback for parsing
 // node's name and its depth in the tree. Tree returns ErrTreeBuilder error when
 // a call to ct gives invalid values.
+//
+// If tb.DecodeLine is nil, Unix.DecodeLine is used.
 func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 	var (
 		e         error
 		dir       = Directory{}
 		buf       = bufio.NewReader(r)
+		dec       = tb.DecodeLine
 		glob      []Directory
 		name      []byte
 		prevName  []byte
@@ -196,6 +199,9 @@ func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 		prevDepth int
 	)
 	fs.Tree = dir
+	if dec == nil {
+		dec = Unix.DecodeLine
+	}
 	line, err := buf.ReadBytes('\n')
 	if len(line) == 0 || err == io.EOF {
 		err = io.ErrUnexpectedEOF
@@ -277,9 +283,99 @@ func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 	}
 }
 
+// Encode serializes the fs.Tree by writing its text representation to the w
+// writer. The text is formatted according to the bt.EncodeState function.
+//
+// If tb.EncodeState is nil, Unix.EncodeState is used.
+func (tb TreeBuilder) Encode(fs FS, w io.Writer) (err error) {
+	var buf = bufio.NewWriter(w)
+	defer func() {
+		if err == nil {
+			err = buf.Flush()
+		}
+	}()
+	if dirlen(fs.Tree) == 0 {
+		_, err = buf.WriteString(".\n")
+		return
+	}
+	// TODO(rjeczalik): fold long root path
+	if _, err = buf.WriteString(".\n"); err != nil {
+		return
+	}
+	var enc = tb.EncodeState
+	if enc == nil {
+		enc = Unix.EncodeState
+	}
+	fn := func(s string, v interface{}, glob []dirQueue) (err error) {
+		var dq = &glob[len(glob)-1]
+		for i := 0; i < len(glob)-1; i++ {
+			if len(glob[i].Queue) != 0 {
+				if _, err = buf.Write(enc(EncodingLevel)); err != nil {
+					return
+				}
+			} else {
+				if _, err = buf.Write(enc(EncodingLevelLast)); err != nil {
+					return
+				}
+			}
+		}
+		if len(dq.Queue) != 0 {
+			if _, err = buf.Write(enc(EncodingItem)); err != nil {
+				return
+			}
+		} else {
+			if _, err = buf.Write(enc(EncodingItemLast)); err != nil {
+				return
+			}
+		}
+		if _, err = buf.WriteString(filepath.Base(s)); err != nil {
+			return
+		}
+		if dir, ok := v.(Directory); ok && dirlen(dir) == 0 {
+			if err = buf.WriteByte('/'); err != nil {
+				return
+			}
+		}
+		err = buf.WriteByte('\n')
+		return
+	}
+	err = dfs(fs.Tree, fn)
+	return
+}
+
+// MarshalUnix serializes FS.Tree to a text representation, which is the same as
+// the Unix tree command's output.
+//
+// Example
+//
+//   var fs = memfs.FS{
+//              Tree: memfs.Directory{
+//                "dir": memfs.Directory{
+//                  "file.txt": memfs.File{},
+//                },
+//              },
+//            }
+//
+//   var tree, _ = memfs.MarshalUnix(fs)
+//
+// The tree slice is equal to:
+//
+//   var tree = []byte(`.
+//   └── dir
+//       └── file.txt`)
+//
+// MarshalUnix is a conveniance function which wraps Unix.Decode.
+func MarshalUnix(fs FS) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := Unix.Encode(fs, &buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 // UnmarshalUnix builds FS.Tree from a buffer that contains tree-like (Unix command) output.
 //
-// Example:
+// Example
 //
 //   var tree = []byte(`.
 //   └── dir
@@ -297,14 +393,42 @@ func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 //              },
 //            }
 //
-// UnmarshalUnix(p) is a short alternative to the Unix.Decode(bytes.NewReader(p)).
+// UnmarshalUnix(p) is a conveniance function which wraps Unix.Decode.
 func UnmarshalUnix(p []byte) (FS, error) {
 	return Unix.Decode(bytes.NewReader(p))
 }
 
+// MarshalTab serializes FS.Tree to a text representation, which is a \t-separated
+// file tree.
+//
+// Example
+//
+//   var fs = memfs.FS{
+//              Tree: memfs.Directory{
+//                "dir": memfs.Directory{
+//                  "file.txt": memfs.File{},
+//                },
+//              },
+//            }
+//
+//   var tree, _ = memfs.MarshalTab(fs)
+//
+// The tree slice is equal to:
+//
+//   var tree = []byte(`.\ndir\n\tfile1.txt\n\tfile2.txt`)
+//
+// MarshalTab is a conveniance function which wraps Tab.Encode.
+func MarshalTab(fs FS) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := Tab.Encode(fs, &buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 // UnmarshalTab builds FS.Tree from a buffer that contains \t-separated file tree.
 //
-// Example:
+// Example
 //
 //   var tree = []byte(`.\ndir\n\tfile1.txt\n\tfile2.txt`)
 //   var fs = memfs.Must(memfs.UnmarshalTab(tree))
@@ -320,7 +444,7 @@ func UnmarshalUnix(p []byte) (FS, error) {
 //              },
 //            }
 //
-// UnmarshalTab(p) is a short alternative to the Tab.Decode(bytes.NewReader(p)).
+// UnmarshalTab is a conveniance function which wraps Tab.Decode.
 func UnmarshalTab(p []byte) (FS, error) {
 	return Tab.Decode(bytes.NewReader(p))
 }

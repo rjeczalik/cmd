@@ -264,27 +264,37 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestUnixTree(t *testing.T) {
-	for i, p := range unix {
-		fs, err := UnmarshalUnix(p)
+func TestEncodingUnix(t *testing.T) {
+	for i, cas := range cases {
+		tree, err := MarshalUnix(cas)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Equal(fs, cases[i]) {
+		fs, err := UnmarshalUnix(tree)
+		if err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !Equal(fs, cas) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
 }
 
-func TestTabTree(t *testing.T) {
-	for i, p := range tab {
-		fs, err := UnmarshalTab(p)
+func TestEncodingTab(t *testing.T) {
+	for i, cas := range cases {
+		tree, err := MarshalTab(cas)
 		if err != nil {
 			t.Errorf("want err=nil; got %q (i=%d)", err, i)
 			continue
 		}
-		if !Equal(fs, cases[i]) {
+		fs, err := UnmarshalTab(tree)
+		if err != nil {
+			t.Errorf("want err=nil; got %q (i=%d)", err, i)
+			continue
+		}
+		if !Equal(fs, cas) {
 			t.Errorf("want Compare(...)=true; got false (i=%d)", i)
 		}
 	}
