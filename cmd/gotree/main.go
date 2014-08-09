@@ -57,7 +57,7 @@ USAGE:
 	gotree [OPTION]... [DIRECTORY]
 
 OPTIONS:
-	-a			Lists also hidden files (NOT IMPLEMENTED)
+	-a			Lists also hidden files
 	-d			Lists directories only (NOT IMPLEMENTED)
 	-L level	Descends only <level> directories deep`
 
@@ -68,7 +68,7 @@ var (
 )
 
 func init() {
-	flag.BoolVar(&all, "a", false, "") // TODO
+	flag.BoolVar(&all, "a", false, "")
 	flag.BoolVar(&dir, "d", false, "") // TODO
 	flag.IntVar(&lvl, "L", 0, "")
 	flag.Parse()
@@ -97,11 +97,8 @@ func main() {
 	} else {
 		root, _ = os.Getwd()
 	}
-	var (
-		spy = memfs.New()
-		c   = fsutil.Control{FS: fsutil.TeeFilesystem(fs.FS{}, spy), Hidden: false}
-	)
-	_ = c.Find(root, lvl)
+	var spy = memfs.New()
+	(fsutil.Control{FS: fsutil.TeeFilesystem(fs.FS{}, spy), Hidden: all}).Find(root, lvl)
 	spy, err := spy.Cd(root)
 	if err != nil {
 		// TODO(rjeczalik): improve error message
