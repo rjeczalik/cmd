@@ -146,9 +146,22 @@ func New() FS {
 //       ├── file1.txt
 //       └── file2.txt
 func (fs FS) String() string {
-	var buf = bytes.NewBuffer(make([]byte, 0, 128))
-	Unix.Encode(fs, buf)
-	return buf.String()
+	tree, err := fs.MarshalText()
+	if err != nil {
+		return errCorrupted.Error() + ": " + err.Error()
+	}
+	return string(tree)
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (fs FS) MarshalText() ([]byte, error) {
+	return MarshalUnix(fs)
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (fs FS) UnmarshalText(text []byte) (err error) {
+	fs, err = UnmarshalUnix(text)
+	return
 }
 
 // Cd gives new filesystem with a root starting at the path of the old filesystem.

@@ -366,8 +366,8 @@ func (tb TreeBuilder) Encode(fs FS, w io.Writer) (err error) {
 //
 // MarshalUnix is a conveniance function which wraps Unix.Decode.
 func MarshalUnix(fs FS) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := Unix.Encode(fs, &buf); err != nil {
+	var buf = bytes.NewBuffer(make([]byte, 0, 128))
+	if err := Unix.Encode(fs, buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
