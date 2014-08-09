@@ -86,14 +86,13 @@ var ErrTreeBuilder = errors.New("invalid name and/or depth values")
 // the TreeBuilder.Encode method.
 type EncodingState uint8
 
-// Example
-//
-// For each state the Unix.EncodeState function member:
+// Example: Each Endcoding* variable makes the Unix.EncodeState function member
+// return the corresponding bytes.
 const (
 	EncodingLevel     EncodingState = iota // returns []byte("│   ")
-	EncodingLevelLast                      // returns ("    ")
-	EncodingItem                           // returns ("├── ")
-	EncodingItemLast                       // returns ("└── ")
+	EncodingLevelLast                      // returns []byte("    ")
+	EncodingItem                           // returns []byte("├── ")
+	EncodingItemLast                       // returns []byte("└── ")
 )
 
 // TreeBuilder provides an implementation of encoding.TextMarshaler and

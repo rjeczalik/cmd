@@ -57,20 +57,23 @@ USAGE:
 	gotree [OPTION]... [DIRECTORY]
 
 OPTIONS:
-	-a			Lists also hidden files
-	-d			Lists directories only
-	-L level	Descends only <level> directories deep`
+	-a            Lists also hidden files
+	-d            Lists directories only
+	-L  level     Descends only <level> directories deep
+	-go width     Output as Go literal with specified maximum column width`
 
 var (
-	all bool
-	dir bool
-	lvl int
+	all     bool
+	dir     bool
+	lvl     int
+	gowidth int
 )
 
 func init() {
 	flag.BoolVar(&all, "a", false, "")
 	flag.BoolVar(&dir, "d", false, "")
 	flag.IntVar(&lvl, "L", 0, "")
+	flag.IntVar(&gowidth, "go", 0, "")
 	flag.Parse()
 }
 
@@ -132,20 +135,31 @@ func main() {
 		// TODO(rjeczalik): improve error message
 		die(err)
 	}
-	var ndir, nfile int
+	var (
+		ndir  int
+		nfile int
+		fn    filepath.WalkFunc
+	)
 	if dir {
-		spy.Walk(string(os.PathSeparator), countdirdelfile(&ndir, spy))
-		if printroot {
-			fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
-		} else {
-			fmt.Printf("%s\n%d directories\n", spy, ndir-1)
-		}
+		fn = countdirdelfile(&ndir, spy)
 	} else {
-		spy.Walk(string(os.PathSeparator), countdirfile(&ndir, &nfile))
-		if printroot {
-			fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
-		} else {
-			fmt.Printf("%s\n%d directories, %d files\n", spy, ndir-1, nfile)
+		fn = countdirfile(&ndir, &nfile)
+	}
+	if err = spy.Walk(string(os.PathSeparator), fn); err != nil {
+		die(err)
+	}
+	switch {
+	case gowidth > 0:
+		if err = EncodeLiteral(spy, gowidth, os.Stdout); err != nil {
+			die(err)
 		}
+	case dir && printroot:
+		fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
+	case dir:
+		fmt.Printf("%s\n%d directories\n", spy, ndir-1)
+	case printroot:
+		fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
+	default:
+		fmt.Printf("%s\n%d directories, %d files\n", spy, ndir-1, nfile)
 	}
 }
