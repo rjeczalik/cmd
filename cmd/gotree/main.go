@@ -116,5 +116,7 @@ func main() {
 		}
 		return
 	})
+	// Root directory does not count.
+	ndir--
 	fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir, nfile)
 }
