@@ -115,6 +115,20 @@ Package fsutil is a collection of various filesystem utility functions.
 
 [godoc.org/github.com/rjeczalik/tools/fs/fsutil](http://godoc.org/github.com/rjeczalik/tools/fs/fsutil)
 
+## rw [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/rw?status.png)](https://godoc.org/github.com/rjeczalik/tools/rw)
+
+Package rw provides various utilities implementing wrappers for io.Reader and io.Writer.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/rw
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/rw](http://godoc.org/github.com/rjeczalik/tools/rw)
+
 ## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
 
 Package netz provides an interface for the `net` package from standard library.
