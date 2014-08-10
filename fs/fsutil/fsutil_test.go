@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/rjeczalik/tools/fs"
 	"github.com/rjeczalik/tools/fs/memfs"
 )
 
@@ -28,6 +29,40 @@ var trees = []memfs.FS{
 		"\n\t\t\tmonitorconf\n\t\t\t\treqaddls.json\n\t\t\t\treqcheckls.json" +
 		"\n\t\t\t\treqeditls.json\n\t\t\t\treqremovels.json\n\t\t\t\treqstat" +
 		"usls.json\nsrc\n\tlicstat\n\t\tschema\n\t\t\tschema.go\n\t\t\ttmp/"))),
+	3: memfs.Must(memfs.UnmarshalTab([]byte(".\n\t.1\n\t\t.2\n\t\t\t.3\n\t\t\t\t" +
+		".txt\n\t\t\t\ttxt\n\t\t\t.3.txt\n\t\t\t3\n\t\t\t\t.txt\n\t\t\t\ttxt" +
+		"\n\t\t\t3.txt\n\t\t.2.txt\n\t\t2\n\t\t\t.3\n\t\t\t\t.txt\n\t\t\t\tt" +
+		"xt\n\t\t\t.3.txt\n\t\t\t3\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t3.txt\n" +
+		"\t\t2.txt\n\t.1.txt\n\t.abc\n\t\t.1\n\t\t\t.2\n\t\t\t\t.3\n\t\t\t\t" +
+		"\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t.3.txt\n\t\t\t\t3\n\t\t\t\t\t.txt\n\t" +
+		"\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t\t.2.txt\n\t\t\t2\n\t\t\t\t.3\n\t\t" +
+		"\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t.3.txt\n\t\t\t\t3\n\t\t\t\t\t.tx" +
+		"t\n\t\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t\t2.txt\n\t\t.efg\n\t\t\t.hij\n" +
+		"\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t.hij.txt\n\t\t\thij\n\t\t\t\t.txt\n" +
+		"\t\t\t\ttxt\n\t\t\thij.txt\n\t\t.efg.txt\n\t\t1\n\t\t\t.2\n\t\t\t\t" +
+		".3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t.3.txt\n\t\t\t\t3\n\t\t\t" +
+		"\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t\t.2.txt\n\t\t\t2\n\t\t" +
+		"\t\t.3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t.3.txt\n\t\t\t\t3\n\t" +
+		"\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t\t2.txt\n\t\tefg\n\t" +
+		"\t\t.hij\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t.hij.txt\n\t\t\thij\n\t\t" +
+		"\t\t.txt\n\t\t\t\ttxt\n\t\t\thij.txt\n\t\tefg.txt\n\t.abc.txt\n\t1\n" +
+		"\t\t.2\n\t\t\t.3\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t.3.txt\n\t\t\t3\n" +
+		"\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t3.txt\n\t\t.2.txt\n\t\t2\n\t\t\t.3" +
+		"\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t.3.txt\n\t\t\t3\n\t\t\t\t.txt\n\t" +
+		"\t\t\ttxt\n\t\t\t3.txt\n\t\t2.txt\n\t1.txt\n\ta.txt\n\tabc\n\t\t.1\n" +
+		"\t\t\t.2\n\t\t\t\t.3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t.3.txt" +
+		"\n\t\t\t\t3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t\t.2" +
+		".txt\n\t\t\t2\n\t\t\t\t.3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t." +
+		"3.txt\n\t\t\t\t3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t3.txt\n\t\t" +
+		"\t2.txt\n\t\t.efg\n\t\t\t.hij\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\t.hi" +
+		"j.txt\n\t\t\thij\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\thij.txt\n\t\t.ef" +
+		"g.txt\n\t\t1\n\t\t\t.2\n\t\t\t\t.3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n" +
+		"\t\t\t\t.3.txt\n\t\t\t\t3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t\t\t3" +
+		".txt\n\t\t\t.2.txt\n\t\t\t2\n\t\t\t\t.3\n\t\t\t\t\t.txt\n\t\t\t\t\t" +
+		"txt\n\t\t\t\t.3.txt\n\t\t\t\t3\n\t\t\t\t\t.txt\n\t\t\t\t\ttxt\n\t\t" +
+		"\t\t3.txt\n\t\t\t2.txt\n\t\tefg\n\t\t\t.hij\n\t\t\t\t.txt\n\t\t\t\t" +
+		"txt\n\t\t\t.hij.txt\n\t\t\thij\n\t\t\t\t.txt\n\t\t\t\ttxt\n\t\t\thi" +
+		"j.txt\n\t\tefg.txt\n\tabc.txt\n"))),
 }
 
 func equal(lhs, cas []string) bool {
@@ -129,6 +164,132 @@ func TestReaddirpaths(t *testing.T) {
 			}
 			if !equal(paths, v) {
 				t.Errorf("want paths=%v; got %v (i=%d, dir=%s)", v, paths, i, dir)
+			}
+		}
+	}
+}
+
+func TestCatchSpy(t *testing.T) {
+	cases := [...]struct {
+		c     Control
+		depth int
+		dirs  map[string][]string
+	}{
+		0: {
+			Control{FS: trees[3]},
+			1,
+			map[string][]string{
+				filepath.FromSlash("/"): {
+					"/1",
+					"/1.txt",
+					"/a.txt",
+					"/abc",
+					"/abc.txt",
+				},
+				filepath.FromSlash("/1"): {
+					"/1/2",
+					"/1/2.txt",
+				},
+				filepath.FromSlash("/abc"): {
+					"/abc/1",
+					"/abc/efg",
+					"/abc/efg.txt",
+				},
+			},
+		},
+		1: {
+			Control{FS: trees[3], Hidden: true},
+			1,
+			map[string][]string{
+				filepath.FromSlash("/"): {
+					"/.1",
+					"/.1.txt",
+					"/.abc",
+					"/.abc.txt",
+					"/1",
+					"/1.txt",
+					"/a.txt",
+					"/abc",
+					"/abc.txt",
+				},
+				filepath.FromSlash("/1"): {
+					"/1/.2",
+					"/1/.2.txt",
+					"/1/2",
+					"/1/2.txt",
+				},
+				filepath.FromSlash("/abc"): {
+					"/abc/.1",
+					"/abc/.efg",
+					"/abc/.efg.txt",
+					"/abc/1",
+					"/abc/efg",
+					"/abc/efg.txt",
+				},
+			},
+		},
+		2: {
+			Control{FS: trees[3]},
+			3,
+			map[string][]string{
+				filepath.FromSlash("/abc/1"): {
+					"/abc/1/2",
+					"/abc/1/2/3",
+					"/abc/1/2/3/txt",
+					"/abc/1/2/3.txt",
+					"/abc/1/2.txt",
+				},
+				filepath.FromSlash("/1"): {
+					"/1/2",
+					"/1/2/3",
+					"/1/2/3/txt",
+					"/1/2/3.txt",
+					"/1/2.txt",
+				},
+				filepath.FromSlash("/abc"): {
+					"/abc/1",
+					"/abc/1/2",
+					"/abc/1/2/3",
+					"/abc/1/2/3.txt",
+					"/abc/1/2.txt",
+					"/abc/efg",
+					"/abc/efg/hij",
+					"/abc/efg/hij/txt",
+					"/abc/efg/hij.txt",
+					"/abc/efg.txt",
+				},
+			},
+		},
+	}
+	for i, cas := range cases {
+		for dir, v := range cas.dirs {
+			spy := memfs.New()
+			for j, fs := range []fs.Filesystem{
+				0: cas.c.FS,
+				1: TeeFilesystem(cas.c.FS, spy),
+				2: spy,
+			} {
+				c := cas.c
+				c.FS = fs
+				found := c.Find(dir, cas.depth)
+				if found == nil {
+					t.Errorf("want found!=nil (i=%d, dir=%s, j=%d)", i, dir, j)
+					continue
+				}
+				if !equal(found, v) {
+					t.Errorf("want found=%v; got %v (i=%d, dir=%s, j=%d)", v,
+						found, i, dir, j)
+					continue
+				}
+			}
+			found := (Control{FS: spy, Hidden: true}).Find(dir, cas.depth)
+			if found == nil {
+				t.Errorf("want found!=nil (i=%d, dir=%s)", i, dir)
+				continue
+			}
+			if !equal(found, v) {
+				t.Errorf("want found=%v; got %v (i=%d, dir=%s)", v, found, i, dir)
+				continue
 			}
 		}
 	}

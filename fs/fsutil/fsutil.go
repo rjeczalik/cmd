@@ -91,6 +91,14 @@ func (c Control) Readdirpaths(dir string) []string {
 	return d
 }
 
+func catchspy(fs fs.Filesystem) (spy memfs.FS, ok bool) {
+	var t teefs
+	if t, ok = fs.(teefs); ok {
+		spy, ok = t.mirror.(memfs.FS)
+	}
+	return
+}
+
 func (c Control) readall(dir string) (files, dirs []string) {
 	f, err := c.FS.Open(dir)
 	if err != nil {
@@ -101,6 +109,7 @@ func (c Control) readall(dir string) (files, dirs []string) {
 	if err != nil || len(fi) == 0 {
 		return nil, nil
 	}
+	spy, ok := catchspy(c.FS)
 	for _, fi := range fi {
 		if name := filepath.Base(fi.Name()); !c.hidden(name) {
 			if fi.IsDir() {
@@ -108,6 +117,8 @@ func (c Control) readall(dir string) (files, dirs []string) {
 			} else {
 				files = append(files, name)
 			}
+		} else if ok {
+			spy.RemoveAll(fi.Name())
 		}
 	}
 	if len(files) == 0 {
@@ -123,7 +134,7 @@ func depthBelow(depth int, root, dir string) bool {
 	if depth <= 0 {
 		return true
 	}
-	return strings.Count(dir[strings.Index(dir, root)+len(root):],
+	return strings.Count(dir[strings.Index(dir, root)+len(root)-1:],
 		string(os.PathSeparator)) < depth
 }
 
