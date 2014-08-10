@@ -9,18 +9,24 @@ import (
 	"github.com/rjeczalik/tools/fs"
 )
 
-// Readpaths reads names of all the files and directories of the 'dir' directory.
+// Readpaths reads paths of all the files and directories of the 'dir' directory.
 // If none files were found, the 'files' slice will be nil. If none directories
 // were found, the 'dirs' slice will be nil. If the 'dir' was empty or error
-// occured, both slice will be empty.
+// occured during accessing the filesystem, both slice will be empty.
 func Readpaths(dir string) (files, dirs []string) {
 	return defaultControl.Readpaths(dir)
 }
 
-// Readdirpaths reads all names of all subdirectories of the 'dir', except
+// Readdirpaths reads all paths of all subdirectories of the 'dir', except
 // the ones which begin with a dot.
 func Readdirpaths(dir string) []string {
 	return defaultControl.Readdirpaths(dir)
+}
+
+// Readdirpaths reads all names of all subdirectories of the 'dir', except
+// the ones which begin with a dot.
+func Readdirnames(dir string) []string {
+	return Default.Readdirnames(dir)
 }
 
 // Intersect returns a collection of paths which are the longest intersection
@@ -76,18 +82,30 @@ type Control struct {
 	Hidden bool
 }
 
-// Readpaths reads names of all the files and directories of the 'dir' directory.
+// Readpaths reads paths of all the files and directories of the 'dir' directory.
 // If none files were found, the 'files' slice will be nil. If none directories
 // were found, the 'dirs' slice will be nil. If the 'dir' was empty or error
-// occured, both slice will be empty.
+// occured during accessing the underlying filesystem, both slice will be empty.
 func (c Control) Readpaths(dir string) (files, dirs []string) {
 	return c.readall(dir)
 }
 
-// Readdirpaths reads names of all the subdirectories of the 'dir' directory.
-// If none were found or error occured, returned slice is nil.
+// Readdirpaths reads paths of all the subdirectories of the 'dir' directory.
+// If none were found or error occured during accessing the underlying filesystem,
+// returned slice is nil.
 func (c Control) Readdirpaths(dir string) []string {
 	_, d := c.readall(dir)
+	return d
+}
+
+// Readdirnames reads names of all the subdirectories of the 'dir' directory.
+// If none were found or error occured during accessing the underlying filesystem,
+// returned slice is nil.
+func (c Control) Readdirnames(dir string) []string {
+	_, d := c.readall(dir)
+	for i := range d {
+		d[i] = filepath.Base(d[i])
+	}
 	return d
 }
 

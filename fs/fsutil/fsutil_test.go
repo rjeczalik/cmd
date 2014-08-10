@@ -169,6 +169,10 @@ func TestReaddirpaths(t *testing.T) {
 	}
 }
 
+func TestReaddirnames(t *testing.T) {
+	t.Skip("TODO(rjeczalik)")
+}
+
 func TestCatchSpy(t *testing.T) {
 	cases := [...]struct {
 		c     Control
