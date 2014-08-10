@@ -12,31 +12,28 @@
 //   	gotree [OPTION]... [DIRECTORY]
 //
 //   OPTIONS:
-//   	-a          All files are listed (NOT IMPLEMENTED)
-//   	-d          List directories only (NOT IMPLEMENTED)
-//   	-L level    Descend only <level> directories deep
+//   	-a          All files are listed
+//   	-d          List directories only
+//   	-L  level   Descend only <level> directories deep
+//      -go width   Output as Go literal with specified maximum column width
 //
 // Example
 //
-//   ~/src $ gotree -L 1 github.com/rjeczalik/tools
-//   github.com
-//   └── rjeczalik
-//       └── tools
-//           ├── .git/
-//           ├── .gitignore
-//           ├── .travis.yml
-//           ├── LICENSE
-//           ├── README.md
-//           ├── cmd/
-//           ├── doc.go
-//           ├── fs/
-//           └── netz/
+//   ~/src $ gotree -a -L 1 github.com/rjeczalik/tools
+//   github.com/rjeczalik/tools/.
+//   ├── .git/
+//   ├── .gitignore
+//   ├── .travis.yml
+//   ├── LICENSE
+//   ├── README.md
+//   ├── appveyor.yml
+//   ├── cmd/
+//   ├── doc.go
+//   ├── fs/
+//   ├── netz/
+//   └── rw/
 //
-//   7 directories, 5 files
-//
-// TODO
-//
-// * do not list hidden files (currently gotree has -a set by default)
+//   5 directories, 6 files
 package main
 
 import (

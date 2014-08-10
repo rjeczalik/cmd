@@ -34,10 +34,18 @@ github.com/rjeczalik/tools/fs/.
     ├── util.go
     └── util_test.go
 
-6 directories, 11 files
+2 directories, 11 files
 ```
 
 **NOTE** `fs.Filesystem` does not support symlinks yet ([#3](https://github.com/rjeczalik/tools/issues/3)), that's why `gotree` will print any symlink as regular file or directory. Moreover it won't follow nor resolve any of them.
+
+```bash
+~/src $ gotree -go=80 github.com/rjeczalik/tools/fs
+memfs.Must(memfs.UnmarshalTab([]byte(".\n\tfs.go\n\tfsutil\n\t\tfsutil.go" +
+	"\n\t\tfsutil_test.go\n\t\ttee.go\n\t\ttee_test.go\n\tmemfs\n\t\tmem" +
+	"fs.go\n\t\tmemfs_test.go\n\t\ttree.go\n\t\ttree_test.go\n\t\tutil.g" +
+	"o\n\t\tutil_test.go\n")))
+```
 
 ## cmd/mktree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree)
 
