@@ -6,16 +6,16 @@
 // Usage
 //
 //   NAME:
-//   	gotree - Go implementation of the Unix tree command
+//     gotree - Go implementation of the Unix tree command
 //
 //   USAGE:
-//   	gotree [OPTION]... [DIRECTORY]
+//     gotree [OPTION]... [DIRECTORY]
 //
 //   OPTIONS:
-//   	-a          All files are listed
-//   	-d          List directories only
-//   	-L  level   Descend only <level> directories deep
-//      -go width   Output as Go literal with specified maximum column width
+//     -a          All files are listed
+//     -d          List directories only
+//     -L  level   Descend only <level> directories deep
+//     -go width   Output as Go literal with specified maximum column width
 //
 // Example
 //

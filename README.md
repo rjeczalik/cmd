@@ -64,16 +64,31 @@ Command mktree creates a file tree out of `tree` output read from standard input
 *Usage*
 
 ```bash
-~ $ tree
+~ $ gotree
 .
 ├── dir
 │   └── file.txt
 └── file.txt
 
 1 directory, 2 files
+
 ~ $ gotree | mktree -o /tmp/mktree
+
 ~ $ gotree /tmp/mktree
 /tmp/mktree
+├── dir
+│   └── file.txt
+└── file.txt
+
+1 directory, 2 files
+```
+```bash
+~ $ gotree > tree.txt
+
+~ $ mktree -o /tmp/mktree2 tree.txt
+
+~ $ gotree /tmp/mktree2
+/tmp/mktree2
 ├── dir
 │   └── file.txt
 └── file.txt
