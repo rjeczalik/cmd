@@ -69,13 +69,18 @@ var (
 	varname string
 )
 
+var flags = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
 func init() {
-	flag.BoolVar(&all, "a", false, "")
-	flag.BoolVar(&dir, "d", false, "")
-	flag.IntVar(&lvl, "L", 0, "")
-	flag.IntVar(&gowidth, "go", 0, "")
-	flag.StringVar(&varname, "var", "", "")
-	flag.Parse()
+	flags.Usage = func() {
+		fmt.Fprintln(os.Stderr, usage)
+	}
+	flags.BoolVar(&all, "a", false, "")
+	flags.BoolVar(&dir, "d", false, "")
+	flags.IntVar(&lvl, "L", 0, "")
+	flags.IntVar(&gowidth, "go", 0, "")
+	flags.StringVar(&varname, "var", "", "")
+	flags.Parse(os.Args[1:])
 }
 
 func die(v interface{}) {
