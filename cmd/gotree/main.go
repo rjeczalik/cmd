@@ -54,16 +54,19 @@ USAGE:
 	gotree [OPTION]... [DIRECTORY]
 
 OPTIONS:
-	-a            Lists also hidden files
-	-d            Lists directories only
-	-L  level     Descends only <level> directories deep
-	-go width     Output as Go literal with specified maximum column width`
+	-a             Lists also hidden files
+	-d             Lists directories only
+	-L   level     Descends only <level> directories deep
+	-go  width     Output tree as Go literal with the specified column width
+	-var name      Output tree as Go variable with the specified name
+	               (if not otherwise specified, column width is set to 80)`
 
 var (
 	all     bool
 	dir     bool
 	lvl     int
 	gowidth int
+	varname string
 )
 
 func init() {
@@ -71,6 +74,7 @@ func init() {
 	flag.BoolVar(&dir, "d", false, "")
 	flag.IntVar(&lvl, "L", 0, "")
 	flag.IntVar(&gowidth, "go", 0, "")
+	flag.StringVar(&varname, "var", "", "")
 	flag.Parse()
 }
 
@@ -146,8 +150,8 @@ func main() {
 		die(err)
 	}
 	switch {
-	case gowidth > 0:
-		if err = EncodeLiteral(spy, gowidth, os.Stdout); err != nil {
+	case gowidth > 0 || varname != "":
+		if err = EncodeLiteral(spy, gowidth, varname, os.Stdout); err != nil {
 			die(err)
 		}
 	case dir && printroot:
