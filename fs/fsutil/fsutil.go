@@ -138,7 +138,7 @@ func (c Control) readall(dir string) (files, dirs []string) {
 				files = append(files, name)
 			}
 		} else if ok {
-			spy.RemoveAll(fi.Name())
+			spy.RemoveAll(filepath.Join(dir, name))
 		}
 	}
 	if len(files) == 0 {
