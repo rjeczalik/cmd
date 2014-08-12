@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,12 +21,12 @@ var (
 	boxHardSpace     = []byte{'\u00a0'}
 )
 
-var (
-	boxDepth     = []byte("│\u00a0\u00a0\u0020")
-	boxDepthLast = []byte("\u0020\u0020\u0020\u0020")
-	boxItem      = []byte("├──\u0020")
-	boxItemLast  = []byte("└──\u0020")
-)
+var box = map[EncodingState][]byte{
+	EncodingLevel:     []byte("│\u00a0\u00a0\u0020"),
+	EncodingLevelLast: []byte("\u0020\u0020\u0020\u0020"),
+	EncodingItem:      []byte("├──\u0020"),
+	EncodingItemLast:  []byte("└──\u0020"),
+}
 
 type dirQueue struct {
 	Name  string
@@ -141,30 +140,19 @@ func init() {
 		depth = (bytes.Count(p, boxSpace) + bytes.Count(p, boxHardSpace) +
 			bytes.Count(p, boxVertical)) / 4
 		if n = bytes.LastIndex(p, boxHorizontal); n == -1 {
-			err = fmt.Errorf("invalid syntax: %q", p)
+			err = errors.New("invalid syntax: " + string(p))
 			return
 		}
 		name = p[n:]
 		if n = bytes.Index(name, boxSpace); n == -1 {
-			err = fmt.Errorf("invalid syntax: %q", p)
+			err = errors.New("invalid syntax: " + string(p))
 			return
 		}
 		name = name[n+1:]
 		return
 	}
 	Unix.EncodeState = func(st EncodingState) []byte {
-		// TODO(rjeczalik): map?
-		switch st {
-		case EncodingLevel:
-			return boxDepth
-		case EncodingItem:
-			return boxItem
-		case EncodingLevelLast:
-			return boxDepthLast
-		case EncodingItemLast:
-			return boxItemLast
-		}
-		panic("unsupported encoding state")
+		return box[st]
 	}
 	Tab.DecodeLine = func(p []byte) (depth int, name []byte, err error) {
 		depth = bytes.Count(p, []byte{'\t'})
@@ -172,11 +160,7 @@ func init() {
 		return
 	}
 	Tab.EncodeState = func(st EncodingState) []byte {
-		switch st {
-		case EncodingLevel, EncodingLevelLast, EncodingItem, EncodingItemLast:
-			return []byte{'\t'}
-		}
-		panic("unsupported encoding state")
+		return []byte{'\t'}
 	}
 }
 
@@ -220,14 +204,6 @@ func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 			return
 		}
 	}
-	defer func() {
-		// This may happen when ct failed to provide non-empty file name,
-		// which left fs tree having a directory defined with a special key
-		// which is not of Property type.
-		if err == nil && !Fsck(fs) {
-			err = errCorrupted
-		}
-	}()
 	glob = append(glob, dir)
 	for {
 		line, err = buf.ReadBytes('\n')
@@ -287,21 +263,22 @@ func (tb TreeBuilder) Decode(r io.Reader) (fs FS, err error) {
 //
 // If tb.EncodeState is nil, Unix.EncodeState is used.
 func (tb TreeBuilder) Encode(fs FS, w io.Writer) (err error) {
-	var buf = bufio.NewWriter(w)
+	// TODO(rjeczalik): fold long root path
+	if _, err = w.Write([]byte(".\n")); err != nil {
+		return
+	}
+	if dirlen(fs.Tree) == 0 {
+		return
+	}
+	var (
+		buf = bufio.NewWriter(w)
+		enc = tb.EncodeState
+	)
 	defer func() {
 		if err == nil {
 			err = buf.Flush()
 		}
 	}()
-	if dirlen(fs.Tree) == 0 {
-		_, err = buf.WriteString(".\n")
-		return
-	}
-	// TODO(rjeczalik): fold long root path
-	if _, err = buf.WriteString(".\n"); err != nil {
-		return
-	}
-	var enc = tb.EncodeState
 	if enc == nil {
 		enc = Unix.EncodeState
 	}

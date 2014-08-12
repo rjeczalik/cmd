@@ -18,8 +18,7 @@ func min(i, j int) int {
 // It ensures Sep does not split escape sequences.
 //
 // TODO(rjeczalik): Current implementation does not play well with Go escape
-//                  sequences longer than two characters (that is other than
-//                  '\t', '\r', '\n' etc.).
+// sequences longer than two characters (that is other than '\t', '\r', '\n' etc.).
 type NinjaReader struct {
 	N    int       // max bytes length read between separators
 	R    io.Reader // underlying reader

@@ -114,7 +114,7 @@ func (c Control) Readdirnames(dir string) []string {
 func catchspy(fs fs.Filesystem) (spy memfs.FS, ok bool) {
 	var t teefs
 	if t, ok = fs.(teefs); ok {
-		spy, ok = t.mirror.(memfs.FS)
+		spy, ok = t.write.(memfs.FS)
 	}
 	return
 }
