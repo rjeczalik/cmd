@@ -46,6 +46,14 @@ memfs.Must(memfs.UnmarshalTab([]byte(".\n\tfs.go\n\tfsutil\n\t\tfsutil.go" +
 	"fs.go\n\t\tmemfs_test.go\n\t\ttree.go\n\t\ttree_test.go\n\t\tutil.g" +
 	"o\n\t\tutil_test.go\n")))
 ```
+```bash
+~/src $ gotree -var=fspkg github.com/rjeczalik/tools/fs
+var fspkg = memfs.Must(memfs.UnmarshalTab([]byte(".\n\tfs.go\n\tfsutil\n\t" +
+        "\tfsutil.go\n\t\tfsutil_test.go\n\t\ttee.go\n\t\ttee_test.go\n\tmem" +
+        "fs\n\t\tmemfs.go\n\t\tmemfs_test.go\n\t\ttree.go\n\t\ttree_test.go\n" +
+        "\t\tutil.go\n\t\tutil_test.go\n")))
+
+```
 
 ## cmd/mktree [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/mktree)
 
