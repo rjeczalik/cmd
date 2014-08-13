@@ -129,8 +129,8 @@ func main() {
 		spy       = memfs.New()
 		printroot = true
 	)
-	if len(flag.Args()) == 1 {
-		root = flag.Args()[0]
+	if len(flags.Args()) == 1 {
+		root = flags.Args()[0]
 	}
 	if root == "." {
 		root, _ = os.Getwd()
