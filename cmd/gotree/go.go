@@ -86,9 +86,8 @@ func EncodeLiteral(fs memfs.FS, n int, v string, w io.Writer) (err error) {
 	ch := make(chan error, 1)
 	go func() {
 		ch <- nonnil(memfs.Tab.Encode(fs, pw), pw.Close())
-
 	}()
-	scr := &rw.NinjaReader{
+	nin := &rw.NinjaReader{
 		N: n,
 		R: io.MultiReader(
 			bytes.NewReader(beg),
@@ -97,7 +96,7 @@ func EncodeLiteral(fs memfs.FS, n int, v string, w io.Writer) (err error) {
 		),
 		Sep: sep,
 	}
-	_, err = io.Copy(w, scr)
+	_, err = io.Copy(w, nin)
 	if e := <-ch; e != nil && err == nil {
 		err = e
 	}

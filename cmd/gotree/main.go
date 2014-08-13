@@ -39,8 +39,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rjeczalik/tools/fs"
 	"github.com/rjeczalik/tools/fs/fsutil"
@@ -138,13 +140,27 @@ func main() {
 	(fsutil.Control{FS: fsutil.TeeFilesystem(fs.FS{}, spy), Hidden: all}).Find(root, lvl)
 	spy, err := spy.Cd(root)
 	if err != nil {
-		// TODO(rjeczalik): improve error message
-		die(err)
+		die(err) // TODO(rjeczalik): improve error message
 	}
+	if gowidth > 0 || varname != "" {
+		if err = EncodeLiteral(spy, gowidth, varname, os.Stdout); err != nil {
+			die(err)
+		}
+	} else {
+		if err = gotree(root, printroot, spy, os.Stdout); err != nil {
+			die(err)
+		}
+	}
+}
+
+func gotree(root string, printroot bool, spy memfs.FS, w io.Writer) (err error) {
 	var (
-		ndir  int
-		nfile int
-		fn    filepath.WalkFunc
+		r      io.Reader
+		pr, pw = io.Pipe()
+		ch     = make(chan error, 1)
+		ndir   int
+		nfile  int
+		fn     filepath.WalkFunc
 	)
 	if dir {
 		fn = countdirdelfile(&ndir, spy)
@@ -152,20 +168,38 @@ func main() {
 		fn = countdirfile(&ndir, &nfile)
 	}
 	if err = spy.Walk(string(os.PathSeparator), fn); err != nil {
-		die(err)
+		return
 	}
+	go func() {
+		ch <- nonnil(memfs.Unix.Encode(spy, pw), pw.Close())
+	}()
 	switch {
-	case gowidth > 0 || varname != "":
-		if err = EncodeLiteral(spy, gowidth, varname, os.Stdout); err != nil {
-			die(err)
-		}
 	case dir && printroot:
-		fmt.Printf("%s%c%s\n%d directories\n", root, os.PathSeparator, spy, ndir-1)
+		r = io.MultiReader(
+			strings.NewReader(fmt.Sprintf("%s%c", root, os.PathSeparator)),
+			pr,
+			strings.NewReader(fmt.Sprintf("\n%d directories\n", ndir-1)),
+		)
 	case dir:
-		fmt.Printf("%s\n%d directories\n", spy, ndir-1)
+		r = io.MultiReader(
+			pr,
+			strings.NewReader(fmt.Sprintf("\n%d directories\n", ndir-1)),
+		)
 	case printroot:
-		fmt.Printf("%s%c%s\n%d directories, %d files\n", root, os.PathSeparator, spy, ndir-1, nfile)
+		r = io.MultiReader(
+			strings.NewReader(fmt.Sprintf("%s%c", root, os.PathSeparator)),
+			pr,
+			strings.NewReader(fmt.Sprintf("\n%d directories, %d files\n", ndir-1, nfile)),
+		)
 	default:
-		fmt.Printf("%s\n%d directories, %d files\n", spy, ndir-1, nfile)
+		r = io.MultiReader(
+			pr,
+			strings.NewReader(fmt.Sprintf("\n%d directories, %d files\n", ndir-1, nfile)),
+		)
 	}
+	_, err = io.Copy(w, r)
+	if e := <-ch; e != nil && err == nil {
+		err = e
+	}
+	return
 }
