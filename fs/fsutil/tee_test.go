@@ -1,7 +1,6 @@
 package fsutil
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -29,7 +28,6 @@ func TestTeeMkdirAll(t *testing.T) {
 
 // TODO(rjeczalik): Split into TestTeeOpen and TestTeeReaddir
 func TestTeeOpen(t *testing.T) {
-	fmt.Println(tree)
 	cases := [...]struct {
 		open []string
 		read []string

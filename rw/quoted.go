@@ -23,6 +23,14 @@ type QuotedReader struct {
 	R   io.Reader    // underlying reader
 }
 
+// QuoteReader creates a reader that escapes every control character read from
+// the underlying reader with its corresponding escape sequence.
+func QuoteReader(r io.Reader) io.Reader {
+	return &QuotedReader{
+		R: r,
+	}
+}
+
 // Read implements io.Reader.
 func (qr *QuotedReader) Read(p []byte) (n int, err error) {
 	if qr.err == nil {
