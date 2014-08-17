@@ -1,4 +1,4 @@
-tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools "linux_amd64") [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=osx)](https://travis-ci.org/rjeczalik/tools "darwin_amd64") [![Build status](https://ci.appveyor.com/api/projects/status/2p6hms7nuantflwb)](https://ci.appveyor.com/project/rjeczalik/tools-161 "windows_amd64")
+tools [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=master)](https://travis-ci.org/rjeczalik/tools "linux_amd64") [![Build Status](https://travis-ci.org/rjeczalik/tools.png?branch=osx)](https://travis-ci.org/rjeczalik/tools "darwin_amd64") [![Build status](https://ci.appveyor.com/api/projects/status/2p6hms7nuantflwb)](https://ci.appveyor.com/project/rjeczalik/tools-161 "windows_amd64") [![Coverage Status](https://coveralls.io/repos/rjeczalik/tools/badge.png?branch=test)](https://coveralls.io/r/rjeczalik/tools?branch=test)
 =====
 
 Productivity commands. Interfaces and mocks for os and net packages. 
