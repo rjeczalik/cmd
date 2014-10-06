@@ -5,13 +5,6 @@ import (
 	"io"
 )
 
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
-
 // NinjedReader proxies reads of R, inserting Sep bytes to the stream each time
 // N bytes was read from the underlying reader.
 //
