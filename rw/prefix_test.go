@@ -27,23 +27,35 @@ func TestPrefixedWriter(t *testing.T) {
 			"[$(DATE)] a\n[$(DATE)] b\n[$(DATE)] c\r\n[$(DATE)] d\n",
 		},
 		{
-			"LINE 1\r\nLINE 2\r\nLINE 3\nLINE 4\r\nLINE 5\n",
+			"LINE 1\r\nLINE 2\r\nLINE 3\nLINE 4\r\n",
 			ring([]string{"+ ", "- "}),
-			"+ LINE 1\r\n- LINE 2\r\n+ LINE 3\n- LINE 4\r\n+ LINE 5\n",
+			"+ LINE 1\r\n- LINE 2\r\n+ LINE 3\n- LINE 4\r\n",
+		},
+		{
+			"\n\n\r\n\r\n\n\r\n",
+			ring([]string{"xxx", "XXX", "..."}),
+			"xxx\nXXX\n...\r\nxxx\r\nXXX\n...\r\n",
+		},
+		{
+			"asd qwe qwe 123 \r\n werwer fq34234 234 \n dfg dfg dfg dfg",
+			func() string { return "9 123 012 30: " },
+			"9 123 012 30: asd qwe qwe 123 \r\n9 123 012 30:  werwer fq34234 " +
+				"234 \n9 123 012 30:  dfg dfg dfg dfg",
 		},
 	}
 	for i, cas := range cases {
-		// TODO(rjeczalik): Fix test-case 1
-		if i != 0 {
-			continue
-		}
 		var buf bytes.Buffer
-		if _, err := io.Copy(PrefixWriter(&buf, cas.prefix), strings.NewReader(cas.s)); err != nil {
+		n, err := io.Copy(PrefixWriter(&buf, cas.prefix), strings.NewReader(cas.s))
+		if err != nil {
 			t.Errorf("want err=nil; got %v (i=%d)", err, i)
 			continue
 		}
 		if got := buf.String(); got != cas.want {
 			t.Errorf("want got=%q; got %q (i=%d)", cas.want, got, i)
+			continue
+		}
+		if want := len(cas.s); int(n) != want {
+			t.Errorf("want n=%d; got %d (i=%d)", want, n, i)
 		}
 	}
 }

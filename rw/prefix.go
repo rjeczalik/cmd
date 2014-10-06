@@ -21,42 +21,50 @@ func PrefixWriter(writer io.Writer, prefix func() string) io.Writer {
 
 // Write TODO
 func (pw *PrefixedWriter) Write(p []byte) (int, error) {
-	var prefix string
 	if !pw.first {
-		prefix = pw.Prefix()
 		// Write prefix for the first line.
-		if _, err := io.Copy(pw.W, strings.NewReader(prefix)); err != nil {
+		if _, err := io.Copy(pw.W, strings.NewReader(pw.Prefix())); err != nil {
 			return 0, err
 		}
 		pw.first = true
 	}
-	var i, j, k, n int
+	var (
+		i int // offset of the begining of a line
+		j int // offset of the end of a line before newline characters
+		k int // relative offset of a next begining of a line
+		n int // width of the newline characters (1 for LF, 2 for CRLF)
+	)
 	if j, n = indexnl(p); i != -1 {
 		var (
 			err error
 			buf bytes.Buffer
 		)
-		if prefix == "" {
-			prefix = pw.Prefix()
-		}
 		// If p contains multiple newlines we loop over each of them.
 	Loop:
 		// Write line.
-		if _, err = buf.Write(p[i : j+1]); err != nil {
+		if _, err = buf.Write(p[i : j+n]); err != nil {
 			return 0, err
 		}
-		// Write prefix for the next line.
-		if _, err = buf.WriteString(prefix); err != nil {
-			return 0, err
-		}
+		i = j + n
 		// Search next newline.
-		if k, n = indexnl(p[j+n+1:]); k != -1 {
-			i, j = j+1, j+k+n+1
+		if k, n = indexnl(p[i:]); k != -1 {
+			// Write prefix for the next line.
+			if _, err = buf.WriteString(pw.Prefix()); err != nil {
+				return 0, err
+			}
+			j = i + k
 			goto Loop
 		}
-		// Write last line.
-		if _, err = buf.Write(p[j+n+1:]); err != nil {
-			return 0, err
+		// Write last line if p does not end with a newline.
+		if i < len(p) {
+			// Write prefix for the last line.
+			if _, err = buf.WriteString(pw.Prefix()); err != nil {
+				return 0, err
+			}
+			// Write the last line.
+			if _, err = buf.Write(p[i:]); err != nil {
+				return 0, err
+			}
 		}
 		n, err := io.Copy(pw.W, &buf)
 		return min(int(n), len(p)), err
