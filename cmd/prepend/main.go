@@ -115,7 +115,7 @@ func main() {
 			die(nonil(errCleanup, tmp.Close(), rdst.Close(), os.Remove(tmp.Name())))
 		}
 	}()
-	r := io.MultiReader(os.Stdin, rdst)
+	var r io.Reader = rdst
 	if src != "" {
 		f, err := os.Open(src)
 		if err != nil {
@@ -123,7 +123,16 @@ func main() {
 			return
 		}
 		defer f.Close()
-		r = io.MultiReader(os.Stdin, f, rdst)
+		r = io.MultiReader(f, r)
+	}
+	// stackoverflow.com/questions/22744443
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		errCleanup = err
+		return
+	}
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		r = io.MultiReader(os.Stdin, r)
 	}
 	_, errCleanup = io.Copy(tmp, r)
 }
