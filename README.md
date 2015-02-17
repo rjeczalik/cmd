@@ -1,7 +1,40 @@
 tools [![Build Status](https://img.shields.io/travis/rjeczalik/tools/master.svg)](https://travis-ci.org/rjeczalik/tools "linux_amd64") [![Build Status](https://img.shields.io/travis/rjeczalik/tools/osx.svg)](https://travis-ci.org/rjeczalik/tools "darwin_amd64") [![Build status](https://img.shields.io/appveyor/ci/rjeczalik/tools-161.svg)](https://ci.appveyor.com/project/rjeczalik/tools-161 "windows_amd64") [![Coverage Status](https://img.shields.io/coveralls/rjeczalik/tools/master.svg)](https://coveralls.io/r/rjeczalik/tools?branch=master)
 =====
 
-Homeless packages and commands.
+Handmade tools for day-to-day plumbing.
+
+## cmd/notify [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/notify?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/notify)
+
+Listens on filesystem changes and forwards received mapping to user-defined handlers.
+
+*Installation*
+
+```bash
+~ $ go get -u github.com/rjeczalik/tools/cmd/notify
+```
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/tools/cmd/notify](http://godoc.org/github.com/rjeczalik/tools/cmd/notify)
+
+*Usage*
+
+```
+~ $ notify -c 'echo "Hello from handler! (event={{.Event}}, path={{.Path}})"'
+2015/02/17 01:17:40 received notify.Create: "/Users/rjeczalik/notify.tmp"
+Hello from handler! (event=create, path=/Users/rjeczalik/notify.tmp)
+...
+```
+```
+~ $ cat > handler <<EOF
+> echo "Hello from handler! (event={{.Event}}, path={{.Path}})"
+> EOF
+
+~ $ notify -f handler
+2015/02/17 01:22:26 received notify.Create: "/Users/rjeczalik/notify.tmp"
+Hello from handler! (event=create, path=/Users/rjeczalik/notify.tmp)
+...
+```
 
 ## cmd/prepend [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/cmd/prepend?status.png)](https://godoc.org/github.com/rjeczalik/tools/cmd/prepend)
 
