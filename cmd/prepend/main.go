@@ -9,13 +9,20 @@
 // meaning if reading from stdin or input file fails the original file is left
 // untouched.
 //
-// Example
+// Examples
 //
-//  ~ $ head -4 license.go | prepend package.go
+// Prepends package.go with 4 first lines of license.go file:
 //
+//   ~ $ head -4 license.go | prepend package.go
+//
+// Prepends package.go with preamble.txt only if the file does not beging with
+// it already:
+//
+//   ~ $ prepend -u -f preamble.txt package.go
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,14 +36,22 @@ const usage = `prepend - inserts data at the begining of the file
 
 USAGE:
 
-	prepend [-f INPUT_FILE] FILE
+	prepend [-f INPUT_FILE] [-u] FILE
 
 EXAMPLE:
 
-	~ $ head -4 license.go | prepend package.go`
+	Prepends package.go with 4 first lines of license.go file:
+
+	  ~ $ head -4 license.go | prepend package.go
+
+	Prepends package.go with preamble.txt only if the file does
+	not beging with it already:
+
+	  ~ $ prepend -u -f preamble.txt package.go`
 
 var src string
 var dst string
+var unique bool
 
 func nonil(err ...error) error {
 	for _, err := range err {
@@ -66,6 +81,7 @@ func init() {
 	}
 	help := false
 	flag.StringVar(&src, "f", "", "")
+	flag.BoolVar(&unique, "u", false, "")
 	flag.BoolVar(&help, "help", false, "")
 	flag.Parse()
 	if help {
@@ -104,6 +120,54 @@ func (nr *nopReader) Read(p []byte) (int, error) {
 
 func nop(r io.Reader) io.Reader {
 	return &nopReader{r: r}
+}
+
+type uniqueReader struct {
+	src    io.Reader
+	dst    io.Reader
+	bufsrc bytes.Buffer
+	bufdst bytes.Buffer
+	done   bool
+	r      io.Reader
+}
+
+func (ur *uniqueReader) Read(p []byte) (int, error) {
+	if ur.done {
+		return ur.r.Read(p)
+	}
+	n, err := ur.src.Read(p)
+	if n == 0 {
+		return 0, errNop
+	}
+	q := make([]byte, n)
+	m, e := ur.dst.Read(q)
+	if m != n {
+		ur.done = true
+		return ur.r.Read(p)
+	}
+	for i := range q {
+		if q[i] != p[i] {
+			ur.done = true
+			return ur.r.Read(p)
+		}
+	}
+	switch {
+	case err == io.EOF:
+		return 0, errNop
+	case e == io.EOF:
+		ur.done = true
+		return ur.r.Read(p[:n])
+	default:
+		return ur.r.Read(p[:n])
+	}
+}
+
+func multiunique(src, dst io.Reader) io.Reader {
+	ur := &uniqueReader{}
+	ur.src = io.TeeReader(src, &ur.bufsrc)
+	ur.dst = io.TeeReader(dst, &ur.bufdst)
+	ur.r = io.MultiReader(&ur.bufsrc, src, &ur.bufdst, dst)
+	return ur
 }
 
 func main() {
@@ -158,5 +222,10 @@ func main() {
 	default:
 		errCleanup = errNop
 	}
-	_, errCleanup = io.Copy(tmp, io.MultiReader(nop(r), rdst))
+	if unique {
+		r = multiunique(nop(r), rdst)
+	} else {
+		r = io.MultiReader(nop(r), rdst)
+	}
+	_, errCleanup = io.Copy(tmp, r)
 }

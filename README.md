@@ -145,7 +145,7 @@ original file is left untouched.
 > Use of this source code is governed by the X license
 > that can be found in the LICENSE file
 
-~ $ find . -type f -name '*.go' -exec preprend -f preamble.txt {} \;
+~ $ find . -type f -name '*.go' -exec preprend -u -f preamble.txt {} \;
 ```
 
 ## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
