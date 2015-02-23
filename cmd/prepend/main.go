@@ -86,6 +86,26 @@ func init() {
 	}
 }
 
+var errNop = errors.New("nop")
+
+type nopReader struct {
+	r io.Reader
+	n int
+}
+
+func (nr *nopReader) Read(p []byte) (int, error) {
+	n, err := nr.r.Read(p)
+	nr.n += n
+	if err == io.EOF && nr.n == 0 {
+		return 0, errNop
+	}
+	return n, err
+}
+
+func nop(r io.Reader) io.Reader {
+	return &nopReader{r: r}
+}
+
 func main() {
 	tmp, err := ioutil.TempFile(filepath.Split(dst))
 	if err != nil {
@@ -103,7 +123,7 @@ func main() {
 				os.Remove(tmp.Name())
 				die(err)
 			}
-			// os.Renamve fails under Windows if destination file exists.
+			// os.Rename fails under Windows if destination file exists.
 			if err = os.Remove(dst); err != nil {
 				os.Remove(tmp.Name())
 				die(err)
@@ -112,27 +132,31 @@ func main() {
 				die(err, "Prepended content is safe under ", tmp.Name())
 			}
 		default:
-			die(nonil(errCleanup, tmp.Close(), rdst.Close(), os.Remove(tmp.Name())))
+			nonil(tmp.Close(), rdst.Close(), os.Remove(tmp.Name()))
+			if errCleanup != errNop {
+				die(errCleanup)
+			}
 		}
 	}()
-	var r io.Reader = rdst
-	if src != "" {
+	var r io.Reader
+	stdin, err := os.Stdin.Stat()
+	if err != nil {
+		errCleanup = err
+		return
+	}
+	switch {
+	case src != "":
 		f, err := os.Open(src)
 		if err != nil {
 			errCleanup = err
 			return
 		}
 		defer f.Close()
-		r = io.MultiReader(f, r)
+		r = f
+	case stdin.Mode()&os.ModeCharDevice == 0: // stackoverflow.com/questions/22744443
+		r = os.Stdin
+	default:
+		errCleanup = errNop
 	}
-	// stackoverflow.com/questions/22744443
-	fi, err := os.Stdin.Stat()
-	if err != nil {
-		errCleanup = err
-		return
-	}
-	if (fi.Mode() & os.ModeCharDevice) == 0 {
-		r = io.MultiReader(os.Stdin, r)
-	}
-	_, errCleanup = io.Copy(tmp, r)
+	_, errCleanup = io.Copy(tmp, io.MultiReader(nop(r), rdst))
 }
