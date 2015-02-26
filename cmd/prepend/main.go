@@ -36,7 +36,7 @@ const usage = `prepend - inserts data at the begining of the file
 
 USAGE:
 
-	prepend [-f INPUT_FILE] [-u] FILE
+	prepend [-f INPUT_FILE] [-u] FILE...
 
 EXAMPLE:
 
@@ -50,8 +50,9 @@ EXAMPLE:
 	  ~ $ prepend -u -f preamble.txt package.go`
 
 var src string
-var dst string
+var dst []string
 var unique bool
+var stdin bytes.Buffer
 
 func nonil(err ...error) error {
 	for _, err := range err {
@@ -63,13 +64,15 @@ func nonil(err ...error) error {
 }
 
 func die(v ...interface{}) {
-	fmt.Fprintln(os.Stderr, v...)
+	for _, v := range v {
+		fmt.Fprintln(os.Stderr, v)
+	}
 	os.Exit(1)
 }
 
 func isfile(s string) error {
-	if fi, err := os.Stat(dst); err != nil && fi.IsDir() {
-		return nonil(err, errors.New(dst+" is a directory"))
+	if fi, err := os.Stat(s); err != nil && fi.IsDir() {
+		return nonil(err, errors.New(s+" is a directory"))
 	}
 	return nil
 }
@@ -87,14 +90,24 @@ func init() {
 	if help {
 		flag.CommandLine.Usage()
 	}
-	if flag.NArg() != 1 {
+	switch flag.NArg() {
+	case 0:
 		die(usage)
+	case 1:
+		dst = []string{flag.Arg(0)}
+		if err := isfile(dst[0]); err != nil {
+			die(err)
+		}
+	default:
+		for _, s := range flag.Args() {
+			if err := isfile(s); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			dst = append(dst, s)
+		}
 	}
-	dst = flag.Arg(0)
 	// Early validate paths provided by the user.
-	if err := isfile(dst); err != nil {
-		die(err)
-	}
 	if src != "" {
 		if err := isfile(src); err != nil {
 			die(err)
@@ -171,13 +184,25 @@ func multiunique(src, dst io.Reader) io.Reader {
 }
 
 func main() {
+	var err []interface{}
+	for _, dst := range dst {
+		if e := prepend(dst); e != nil {
+			err = append(err, e)
+		}
+	}
+	if len(err) != 0 {
+		die(err...)
+	}
+}
+
+func prepend(dst string) (err error) {
 	tmp, err := ioutil.TempFile(filepath.Split(dst))
 	if err != nil {
-		die(err)
+		return err
 	}
 	rdst, err := os.Open(dst)
 	if err != nil {
-		die(nonil(err, tmp.Close(), os.Remove(tmp.Name())))
+		return nonil(err, tmp.Close(), os.Remove(tmp.Name()))
 	}
 	var errCleanup error
 	defer func() {
@@ -185,25 +210,23 @@ func main() {
 		case nil:
 			if err = nonil(tmp.Close(), rdst.Close()); err != nil {
 				os.Remove(tmp.Name())
-				die(err)
 			}
 			// os.Rename fails under Windows if destination file exists.
 			if err = os.Remove(dst); err != nil {
 				os.Remove(tmp.Name())
-				die(err)
 			}
 			if err = os.Rename(tmp.Name(), dst); err != nil {
-				die(err, "Prepended content is safe under ", tmp.Name())
+				err = errors.New(err.Error() + " (prepended content is safe under " + tmp.Name() + ")")
 			}
 		default:
 			nonil(tmp.Close(), rdst.Close(), os.Remove(tmp.Name()))
 			if errCleanup != errNop {
-				die(errCleanup)
+				err = errCleanup
 			}
 		}
 	}()
 	var r io.Reader
-	stdin, err := os.Stdin.Stat()
+	fi, err := os.Stdin.Stat()
 	if err != nil {
 		errCleanup = err
 		return
@@ -213,12 +236,12 @@ func main() {
 		f, err := os.Open(src)
 		if err != nil {
 			errCleanup = err
-			return
+			return err
 		}
 		defer f.Close()
 		r = f
-	case stdin.Mode()&os.ModeCharDevice == 0: // stackoverflow.com/questions/22744443
-		r = os.Stdin
+	case fi.Mode()&os.ModeCharDevice == 0: // stackoverflow.com/questions/22744443
+		r = io.MultiReader(bytes.NewReader(stdin.Bytes()), io.TeeReader(os.Stdin, &stdin))
 	default:
 		errCleanup = errNop
 	}
@@ -228,4 +251,5 @@ func main() {
 		r = io.MultiReader(nop(r), rdst)
 	}
 	_, errCleanup = io.Copy(tmp, r)
+	return err
 }
