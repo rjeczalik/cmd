@@ -5,8 +5,7 @@ os: Windows Server 2012 R2
 clone_folder: c:\projects\src\github.com\rjeczalik\tools
 
 environment:
- PATH: c:\go-x64\bin;c:\projects\bin;%PATH%
- GOROOT: c:\go-x64
+ PATH: c:\projects\bin;%PATH%
  GOPATH: c:\projects
 
 install:
