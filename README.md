@@ -141,11 +141,13 @@ original file is left untouched.
 
 ```
 ~ $ cat > preamble.txt <<EOF
-> Copyright (c) 2015 Your Team. All right reserved.
-> Use of this source code is governed by the X license
-> that can be found in the LICENSE file
+> // Copyright (c) 2015 Your Team. All right reserved.
+> // Use of this source code is governed by the X license
+> // that can be found in the LICENSE file
+>
+> EOF
 
-~ $ find . -type f -name '*.go' -exec preprend -u -f preamble.txt {} \;
+~ $ preprend -u -f preamble.txt *.go
 ```
 
 ## netz [![GoDoc](https://godoc.org/github.com/rjeczalik/tools/netz?status.png)](https://godoc.org/github.com/rjeczalik/tools/netz)
