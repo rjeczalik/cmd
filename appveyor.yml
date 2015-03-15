@@ -2,7 +2,7 @@ version: "{build}"
 
 os: Windows Server 2012 R2
 
-clone_folder: c:\projects\src\github.com\rjeczalik\tools
+clone_folder: c:\projects\src\github.com\rjeczalik\cmd
 
 environment:
  PATH: c:\projects\bin;%PATH%

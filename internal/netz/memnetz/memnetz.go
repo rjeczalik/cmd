@@ -5,7 +5,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/rjeczalik/tools/netz"
+	"github.com/rjeczalik/cmd/internal/netz"
 )
 
 var (
