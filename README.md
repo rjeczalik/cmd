@@ -1,4 +1,4 @@
-cmd [![Build Status](https://img.shields.io/travis/rjeczalik/cmd/master.svg)](https://travis-ci.org/rjeczalik/cmd "linux_amd64") [![Build Status](https://img.shields.io/travis/rjeczalik/cmd/osx.svg)](https://travis-ci.org/rjeczalik/cmd "darwin_amd64") [![Build status](https://img.shields.io/appveyor/ci/rjeczalik/cmd-161.svg)](https://ci.appveyor.com/project/rjeczalik/cmd-161 "windows_amd64") [![Coverage Status](https://img.shields.io/coveralls/rjeczalik/cmd/master.svg)](https://coveralls.io/r/rjeczalik/cmd?branch=master)
+cmd [![Build Status](https://img.shields.io/travis/rjeczalik/cmd/master.svg)](https://travis-ci.org/rjeczalik/cmd "linux_amd64") [![Build Status](https://img.shields.io/travis/rjeczalik/cmd/osx.svg)](https://travis-ci.org/rjeczalik/cmd "darwin_amd64") [![Build status](https://img.shields.io/appveyor/ci/rjeczalik/cmd.svg)](https://ci.appveyor.com/project/rjeczalik/cmd "windows_amd64") [![Coverage Status](https://img.shields.io/coveralls/rjeczalik/cmd/master.svg)](https://coveralls.io/r/rjeczalik/cmd?branch=master)
 =====
 
 Handmade cmd for day-to-day plumbing.
