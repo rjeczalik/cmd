@@ -69,10 +69,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"text/template"
 
+	"github.com/rjeczalik/cmd/internal/cmd"
 	"github.com/rjeczalik/notify"
 )
 
@@ -144,39 +144,30 @@ func newenv() func(Event) []string {
 	}
 }
 
-// Handler TODO(rjeczalik)
-type Handler struct {
+type handler struct {
 	tmpl *template.Template
 	env  []string
 }
 
-// NewHandler TODO(rjeczalik)
-func NewHandler(text string) (*Handler, error) {
+func newHandler(text string) (*handler, error) {
 	tmpl, err := template.New("main.Handler").Parse(text)
 	if err != nil {
 		return nil, err
 	}
-	h := &Handler{
+	h := &handler{
 		tmpl: tmpl,
 		env:  env(Event{}),
 	}
 	return h, nil
 }
 
-// Run TODO(rjeczalik)
-func (h *Handler) Run(e Event) error {
+func (h *handler) Run(e Event) error {
 	var buf bytes.Buffer
 	if err := h.tmpl.Execute(&buf, e); err != nil {
 		return err
 	}
-	s := buf.String()
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		cmd = exec.Command("cmd", "/c", s)
-	default:
-		cmd = exec.Command("/bin/sh", "-c", s)
-	}
+	name, args := cmd.Split(buf.String())
+	cmd := exec.Command(name, args...)
 	h.env[len(h.env)-1] = "NOTIFY_EVENT=" + e.Event
 	h.env[len(h.env)-2] = "NOTIFY_PATH=" + e.Path
 	cmd.Stdout = os.Stdout
@@ -185,8 +176,7 @@ func (h *Handler) Run(e Event) error {
 	return cmd.Run()
 }
 
-// Daemon TODO(rjeczalik)
-func (h *Handler) Daemon() chan<- Event {
+func (h *handler) Daemon() chan<- Event {
 	c := make(chan Event)
 	go func() {
 		for e := range c {
@@ -198,14 +188,13 @@ func (h *Handler) Daemon() chan<- Event {
 	return c
 }
 
-// Event TODO(rjeczalik)
 type Event struct {
 	Path  string
 	Event string
 }
 
-// NewEvent TODO(rjeczalik)
-func NewEvent(ei notify.EventInfo) Event {
+// newEvent TODO(rjeczalik)
+func newEvent(ei notify.EventInfo) Event {
 	return Event{
 		Path:  ei.Path(),
 		Event: mapping[ei.Event()],
@@ -230,9 +219,9 @@ func init() {
 }
 
 func main() {
-	var handlers []*Handler
+	var handlers []*handler
 	if command != "" {
-		h, err := NewHandler(command)
+		h, err := newHandler(command)
 		if err != nil {
 			die(err)
 		}
@@ -243,7 +232,7 @@ func main() {
 		if err != nil {
 			die(err)
 		}
-		h, err := NewHandler(string(p))
+		h, err := newHandler(string(p))
 		if err != nil {
 			die(err)
 		}
@@ -261,7 +250,7 @@ func main() {
 	}
 	for ei := range c {
 		log.Println("received", ei)
-		e := NewEvent(ei)
+		e := newEvent(ei)
 		for _, run := range run {
 			select {
 			case run <- e:
