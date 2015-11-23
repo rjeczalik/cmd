@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/sethgrid/multibar"
 )
 
 var me *user.User
@@ -124,6 +125,12 @@ func (cmd *s3fillCmd) Init(flags *flag.FlagSet, log *log.Logger) {
 
 func (cmd *s3fillCmd) Run(session *session.Session) error {
 	svc := s3.New(session)
+	bars, err := multibar.New()
+	if err != nil {
+		return err
+	}
+	go bars.Listen()
+	progress := bars.MakeBar(cmd.N, cmd.Bucket)
 	left := cmd.N
 	for left > 0 {
 		s := fmt.Sprintf("object-%d", rand.Int63())
@@ -136,7 +143,7 @@ func (cmd *s3fillCmd) Run(session *session.Session) error {
 			ContentLength: aws.Int64(int64(len(s))),
 			ContentType:   aws.String("text/plain"),
 		}
-		resp, err := svc.PutObject(params)
+		_, err := svc.PutObject(params)
 		if matches(err, "duplicate") {
 			cmd.Log.Printf("bucket=%q, key=%q: %s", cmd.Bucket, key, err)
 			continue
@@ -144,8 +151,8 @@ func (cmd *s3fillCmd) Run(session *session.Session) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(aws.StringValue(resp.VersionId))
 		left--
+		progress(cmd.N - left - 1)
 	}
 	return nil
 }
