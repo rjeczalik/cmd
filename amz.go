@@ -29,6 +29,7 @@ type Command interface {
 var commands = map[string]Command{
 	"s3create": new(s3createCmd),
 	"s3fill":   new(s3fillCmd),
+	"s3ls":     new(s3ls),
 }
 
 const usage = `amz COMMAND [ARGS...]
@@ -36,7 +37,8 @@ const usage = `amz COMMAND [ARGS...]
 Available commands are:
 
 	s3create -help
-	s3fill -help
+	s3fill   -help
+	s3ls     -help
 `
 
 func matches(err error, code string) bool {
@@ -84,6 +86,51 @@ func main() {
 	if err := cmd.Run(session.New(cfg)); err != nil {
 		die(err)
 	}
+}
+
+type s3ls struct {
+	N      int
+	Path   string
+	Bucket string
+	Log    *log.Logger
+}
+
+func (cmd *s3ls) Init(flags *flag.FlagSet, log *log.Logger) {
+	flags.IntVar(&cmd.N, "n", 0, "List max n objects.")
+	flags.StringVar(&cmd.Bucket, "bucket", "amz-bucket-"+me.Username, "Bucket name.")
+	flags.StringVar(&cmd.Path, "path", "", "Relative path within bucket.")
+	cmd.Log = log
+}
+
+func (cmd *s3ls) Run(session *session.Session) error {
+	svc := s3.New(session)
+	params := &s3.ListObjectsInput{
+		Bucket: aws.String(cmd.Bucket),
+	}
+	if cmd.Path != "" {
+		params.Prefix = aws.String(cmd.Path + "/")
+	}
+	for {
+		resp, err := svc.ListObjects(params)
+		if err != nil {
+			return err
+		}
+		params.Marker = nil
+		if aws.BoolValue(resp.IsTruncated) {
+			if resp.NextMarker != nil {
+				params.Marker = resp.NextMarker
+			} else if n := len(resp.Contents); n != 0 {
+				params.Marker = resp.Contents[n-1].Key
+			}
+		}
+		for _, obj := range resp.Contents {
+			fmt.Println(aws.StringValue(obj.Key))
+		}
+		if params.Marker == nil {
+			break
+		}
+	}
+	return nil
 }
 
 type s3createCmd struct {
