@@ -26,14 +26,17 @@ type Command interface {
 }
 
 var commands = map[string]Command{
-	"s3fill": new(s3fillCmd),
+	"s3create": new(s3createCmd),
+	"s3fill":   new(s3fillCmd),
 }
 
 const usage = `amz COMMAND [ARGS...]
 
 Available commands are:
 
-	s3fill -help`
+	s3create -help
+	s3fill -help
+`
 
 func matches(err error, code string) bool {
 	switch e := err.(type) {
@@ -67,17 +70,42 @@ func main() {
 		die(usage)
 	}
 	f := flag.NewFlagSet("amz", flag.ContinueOnError)
-	l := log.New(os.Stderr, "["+name+"]", log.LstdFlags)
+	l := log.New(os.Stderr, "["+name+"] ", log.LstdFlags)
+	region := f.String("region", "eu-central-1", "Region name.")
 	cmd.Init(f, l)
 	if err := f.Parse(args); err != nil {
 		die(err)
 	}
 	cfg := &aws.Config{
 		Credentials: credentials.NewCredentials(&credentials.EnvProvider{}),
+		Region:      region,
 	}
 	if err := cmd.Run(session.New(cfg)); err != nil {
 		die(err)
 	}
+}
+
+type s3createCmd struct {
+	Bucket string
+	Log    *log.Logger
+}
+
+func (cmd *s3createCmd) Init(flags *flag.FlagSet, log *log.Logger) {
+	flags.StringVar(&cmd.Bucket, "bucket", "amz-bucket-"+me.Username, "Bucket name.")
+	cmd.Log = log
+}
+
+func (cmd *s3createCmd) Run(session *session.Session) error {
+	svc := s3.New(session)
+	params := &s3.CreateBucketInput{
+		Bucket: aws.String(cmd.Bucket),
+		ACL:    aws.String(s3.BucketCannedACLPrivate),
+	}
+	_, err := svc.CreateBucket(params)
+	if err != nil {
+		return err
+	}
+	return svc.WaitUntilBucketExists(&s3.HeadBucketInput{Bucket: aws.String(cmd.Bucket)})
 }
 
 type s3fillCmd struct {
@@ -109,8 +137,8 @@ func (cmd *s3fillCmd) Run(session *session.Session) error {
 			ContentType:   aws.String("text/plain"),
 		}
 		resp, err := svc.PutObject(params)
-		if matches(err, "") {
-			cmd.Log.Printf("duplicate bucket=%q, key=%q: %s", cmd.Bucket, key, err)
+		if matches(err, "duplicate") {
+			cmd.Log.Printf("bucket=%q, key=%q: %s", cmd.Bucket, key, err)
 			continue
 		}
 		if err != nil {
