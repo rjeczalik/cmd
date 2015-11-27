@@ -110,27 +110,12 @@ func (cmd *s3ls) Run(session *session.Session) error {
 	if cmd.Path != "" {
 		params.Prefix = aws.String(cmd.Path + "/")
 	}
-	for {
-		resp, err := svc.ListObjects(params)
-		if err != nil {
-			return err
-		}
-		params.Marker = nil
-		if aws.BoolValue(resp.IsTruncated) {
-			if resp.NextMarker != nil {
-				params.Marker = resp.NextMarker
-			} else if n := len(resp.Contents); n != 0 {
-				params.Marker = resp.Contents[n-1].Key
-			}
-		}
+	return svc.ListObjectsPages(params, func(resp *s3.ListObjectsOutput, _ bool) bool {
 		for _, obj := range resp.Contents {
 			fmt.Println(aws.StringValue(obj.Key))
 		}
-		if params.Marker == nil {
-			break
-		}
-	}
-	return nil
+		return true
+	})
 }
 
 type s3createCmd struct {
