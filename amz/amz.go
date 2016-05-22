@@ -1,14 +1,20 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -30,6 +36,7 @@ var commands = map[string]Command{
 	"s3create": new(s3createCmd),
 	"s3fill":   new(s3fillCmd),
 	"s3ls":     new(s3ls),
+	"s3log":    new(s3log),
 }
 
 const usage = `amz COMMAND [ARGS...]
@@ -39,6 +46,7 @@ Available commands are:
 	s3create -help
 	s3fill   -help
 	s3ls     -help
+	s3log    -help
 `
 
 func matches(err error, code string) bool {
@@ -48,6 +56,16 @@ func matches(err error, code string) bool {
 	default:
 		return false
 	}
+}
+
+func nonil(err ...error) error {
+	for _, e := range err {
+		if e != nil {
+			return e
+		}
+	}
+
+	return nil
 }
 
 func die(v interface{}) {
@@ -74,7 +92,7 @@ func main() {
 	}
 	f := flag.NewFlagSet("amz", flag.ContinueOnError)
 	l := log.New(os.Stderr, "["+name+"] ", log.LstdFlags)
-	region := f.String("region", "eu-central-1", "Region name.")
+	region := f.String("region", "us-east-1", "Region name.")
 	cmd.Init(f, l)
 	if err := f.Parse(args); err != nil {
 		die(err)
@@ -187,4 +205,142 @@ func (cmd *s3fillCmd) Run(session *session.Session) error {
 		progress(cmd.N - left - 1)
 	}
 	return nil
+}
+
+type s3log struct {
+	URI  string
+	Time time.Duration
+}
+
+func (cmd *s3log) Init(flags *flag.FlagSet, log *log.Logger) {
+	flags.StringVar(&cmd.URI, "uri", "s3://koding-client/user", "")
+	flags.DurationVar(&cmd.Time, "t", 7*24*time.Hour, "")
+}
+
+func (cmd *s3log) Run(session *session.Session) error {
+	if cmd.URI == "" {
+		return errors.New("invalid empty -uri value")
+	}
+	u, err := url.Parse(cmd.URI)
+	if err != nil {
+		u, err = url.Parse("s3://" + cmd.URI)
+		if err != nil {
+			return err
+		}
+	}
+	svc := s3.New(session)
+	params := &s3.ListObjectsInput{
+		Bucket: aws.String(u.Host),
+	}
+	if u.Path != "/" && u.Path != "" {
+		params.Prefix = aws.String(strings.TrimPrefix(u.Path+"/", "/"))
+	}
+
+	var (
+		logs    = make(map[string]struct{})
+		oldest  = time.Now().UTC().Add(-cmd.Time)
+		done    = make(chan struct{})
+		files   = make(chan string, 1024)
+		count   int
+		matched int
+		mu      sync.Mutex
+		wg      sync.WaitGroup
+	)
+
+	go func() {
+		t := time.NewTicker(10 * time.Second)
+		defer t.Stop()
+
+		for {
+			select {
+			case <-t.C:
+				mu.Lock()
+				log.Printf("processed=%d, matched=%d", count, matched)
+				mu.Unlock()
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	for range make([]struct{}, runtime.NumCPU()) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for file := range files {
+				params := &s3.GetObjectInput{
+					Bucket: aws.String(u.Host),
+					Key:    aws.String(file),
+				}
+
+				resp, err := svc.GetObject(params)
+				if err != nil {
+					log.Printf("failed to download %q: %s", file, err)
+					continue
+				}
+
+				dir := filepath.Dir(file)
+
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					log.Printf("failed to create %q: %s", dir, err)
+					continue
+				}
+
+				f, err := os.Create(file)
+				if err != nil {
+					log.Printf("failed to create %q: %s", file, err)
+					continue
+				}
+
+				if _, err := io.Copy(f, resp.Body); err != nil {
+					log.Printf("failed to write %q: %s", file, err)
+					continue
+				}
+
+				if err := nonil(f.Sync(), f.Close(), resp.Body.Close()); err != nil {
+					log.Printf("failed to close %q: %s", file, err)
+					continue
+				}
+
+				log.Println(file)
+			}
+		}()
+	}
+
+	err = svc.ListObjectsPages(params, func(resp *s3.ListObjectsOutput, _ bool) bool {
+		for _, obj := range resp.Contents {
+			s := path.Base(aws.StringValue(obj.Key))
+			s = strings.TrimPrefix(s, "logs_")
+			s = strings.TrimSuffix(s, ".txt")
+			t, err := time.Parse(time.RFC3339, s)
+			if err != nil {
+				continue
+			}
+
+			n := len(logs)
+
+			file := filepath.FromSlash((aws.StringValue(obj.Key)))
+
+			if t.UTC().After(oldest) {
+				logs[file] = struct{}{}
+			}
+
+			if n = len(logs) - n; n > 0 {
+				files <- file
+			}
+
+			mu.Lock()
+			count++
+			matched += n
+			mu.Unlock()
+		}
+		return true
+	})
+
+	close(done)
+	close(files)
+
+	wg.Wait()
+
+	return err
 }
