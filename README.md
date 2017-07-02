@@ -149,3 +149,34 @@ original file is left untouched.
 
 ~ $ preprend -u -f preamble.txt *.go
 ```
+
+## cmd/draft-init [![GoDoc](https://godoc.org/github.com/rjeczalik/cmd/draft-init?status.png)](https://godoc.org/github.com/rjeczalik/cmd/draft-init)
+
+Command draft-init is a conveniance wrapper for `draft init` and `docker login` commands, which is used to configure both - draft and docker - using GCP's service account json key file.
+
+*Documentation*
+
+[godoc.org/github.com/rjeczalik/cmd/draft-init](http://godoc.org/github.com/rjeczalik/cmd/draft-init)
+
+
+*Installation*
+
+```
+$ go get -u github.com/rjeczalik/cmd/draft-init
+```
+
+*Usage*
+
+```
+Usage of draft-init:
+  -docker
+    	Initialize docker only.
+  -domain string
+    	Base domain for applications.
+  -dry
+    	Print commands only.
+  -f string
+    	Service account JSON key file.
+  -gcr string
+    	Container registry host. (default "gcr.io")
+```
