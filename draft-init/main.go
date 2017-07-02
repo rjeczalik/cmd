@@ -60,8 +60,14 @@ func main() {
 	}
 }
 
-func run(opts *options) error {
-	pass, err := ioutil.ReadFile(opts.file)
+func run(opts *options) (err error) {
+	var pass []byte
+	switch opts.file {
+	case "-":
+		pass, err = ioutil.ReadAll(os.Stdin)
+	default:
+		pass, err = ioutil.ReadFile(opts.file)
+	}
 	if err != nil {
 		return err
 	}
