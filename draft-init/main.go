@@ -34,6 +34,7 @@ type options struct {
 	file   string
 	domain string
 	gcr    string
+	docker bool
 	dry    bool
 }
 
@@ -42,6 +43,7 @@ func (opts *options) RegisterFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.domain, "domain", "", "Base domain for applications.")
 	f.StringVar(&opts.gcr, "gcr", "gcr.io", "Container registry host.")
 	f.BoolVar(&opts.dry, "dry", false, "Print commands only.")
+	f.BoolVar(&opts.docker, "docker", false, "Initialize docker only.")
 }
 func die(v ...interface{}) {
 	fmt.Fprintln(os.Stderr, v...)
@@ -119,6 +121,10 @@ func run(opts *options) error {
 
 	if err := docker.Run(); err != nil {
 		return err
+	}
+
+	if opts.docker {
+		return nil
 	}
 
 	return draft.Run()
