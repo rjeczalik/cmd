@@ -110,7 +110,6 @@ func run(opts *options) (err error) {
 
 	dockerArgs := []string{
 		"login",
-		"-e", auth.Email,
 		"-u", auth.Username,
 		"-p", auth.Password,
 		opts.gcr,
