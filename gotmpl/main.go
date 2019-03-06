@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -50,6 +51,27 @@ var f = map[string]interface{}{
 			return "", err
 		}
 		return string(p), nil
+	},
+	"or": func(s ...string) string {
+		for _, s := range s {
+			if s != "" {
+				return s
+			}
+		}
+		return ""
+	},
+	"file": func(path string) (string, error) {
+		if path == "" {
+			return "", nil
+		}
+		p, err := ioutil.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		return string(bytes.TrimSpace(p)), nil
+	},
+	"base64": func(s string) string {
+		return base64.RawStdEncoding.EncodeToString([]byte(s))
 	},
 	"jsonl": func(v ...interface{}) (string, error) {
 		var buf bytes.Buffer
