@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/ghodss/yaml"
 )
 
 const usage = `USAGE:
@@ -60,13 +63,23 @@ var f = map[string]interface{}{
 		}
 		return strings.TrimSpace(buf.String()), nil
 	},
+	"fromjson": func(s string) (interface{}, error) {
+		var v interface{}
+		if err := json.Unmarshal([]byte(s), &v); err != nil {
+			return nil, err
+		}
+		return v, nil
+	},
 	"quote": func(s string) string {
 		return strconv.Quote(s)
 	},
 }
 
 func run(tmplFile, dataFile string) ([]byte, error) {
-	p, err := ioutil.ReadFile(tmplFile)
+	if tmplFile == "-" && dataFile == "-" {
+		return nil, errors.New("template file and data file cannot be both stdin")
+	}
+	p, err := readFile(tmplFile)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +88,11 @@ func run(tmplFile, dataFile string) ([]byte, error) {
 		return nil, err
 	}
 	var data interface{}
-	p, err = ioutil.ReadFile(dataFile)
+	p, err = readFile(dataFile)
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(p, &data); err != nil {
+	if err := yaml.Unmarshal(p, &data); err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
@@ -87,4 +100,11 @@ func run(tmplFile, dataFile string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func readFile(path string) ([]byte, error) {
+	if path == "-" {
+		return ioutil.ReadAll(os.Stdin)
+	}
+	return ioutil.ReadFile(path)
 }
