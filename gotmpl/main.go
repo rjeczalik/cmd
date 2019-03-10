@@ -18,7 +18,7 @@ import (
 
 const usage = `USAGE:
 
-	gotmpl TEMPLATE_FILE [DATA_FILE.json]
+	gotmpl TEMPLATE_FILE|- [DATA_FILE.json|DATA_FILE.yaml|-]
 
 `
 
