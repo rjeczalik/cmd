@@ -94,9 +94,21 @@ func init() {
 	case 0:
 		die(usage)
 	case 1:
-		dst = []string{flag.Arg(0)}
-		if err := isfile(dst[0]); err != nil {
+		switch fi, err := os.Stat(flag.Arg(0)); {
+		case err != nil:
 			die(err)
+		case fi.IsDir():
+			f, err := os.Open(flag.Arg(0))
+			if err != nil {
+				die(err)
+			}
+			names, err := f.Readdirnames(-1)
+			f.Close()
+			for _, name := range names {
+				dst = append(dst, filepath.Join(flag.Arg(0), name))
+			}
+		default:
+			dst = append(dst, flag.Arg(0))
 		}
 	default:
 		for _, s := range flag.Args() {
@@ -107,6 +119,7 @@ func init() {
 			dst = append(dst, s)
 		}
 	}
+
 	// Early validate paths provided by the user.
 	if src != "" {
 		if err := isfile(src); err != nil {
